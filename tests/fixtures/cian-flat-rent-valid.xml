@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Feed>
+  <Feed_Version>2</Feed_Version>
+  <Object>
+    <Category>flatRent</Category>
+    <ExternalId>listing-golden-001</ExternalId>
+    <Description>Светлая квартира у парка. Отдельная кухня, мебель, техника. Сдаётся на длительный срок.</Description>
+    <Address>Тестовый город, ул. Тестовая, д. 1</Address>
+    <FlatRoomsCount>1</FlatRoomsCount>
+    <TotalArea>42</TotalArea>
+    <FloorNumber>4</FloorNumber>
+    <Building>
+      <FloorsCount>9</FloorsCount>
+    </Building>
+    <BargainTerms>
+      <Price>70000</Price>
+      <Currency>rur</Currency>
+      <Deposit>70000</Deposit>
+      <LeaseTermType>longTerm</LeaseTermType>
+    </BargainTerms>
+    <Phones>
+      <PhoneSchema>
+        <CountryCode>7</CountryCode>
+        <Number>9001234567</Number>
+      </PhoneSchema>
+    </Phones>
+    <Photos>
+      <PhotoSchema>
+        <FullUrl>https://cdn.example.com/a.jpg</FullUrl>
+        <IsDefault>true</IsDefault>
+      </PhotoSchema>
+      <PhotoSchema>
+        <FullUrl>https://cdn.example.com/b.jpg</FullUrl>
+        <IsDefault>false</IsDefault>
+      </PhotoSchema>
+    </Photos>
+  </Object>
+</Feed>
