@@ -2,6 +2,7 @@ import type {
   ManagementType,
   PropertyStatus,
   PropertyType,
+  RentCollectionMode,
 } from "@prisma/client";
 
 export const propertyTypeLabels: Record<PropertyType, string> = {
@@ -20,6 +21,11 @@ export const propertyStatusLabels: Record<PropertyStatus, string> = {
 export const managementTypeLabels: Record<ManagementType, string> = {
   OWN: "Собственный",
   COMMISSION: "Комиссия",
+};
+
+export const rentCollectionModeLabels: Record<RentCollectionMode, string> = {
+  OPERATOR: "Оператор собирает аренду",
+  OWNER_DIRECT: "Собственник собирает напрямую",
 };
 
 export function formatMoney(value: number | null) {

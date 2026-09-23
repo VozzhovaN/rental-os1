@@ -7,6 +7,7 @@ import {
   IconCalendar,
   IconFolder,
   IconHouse,
+  IconHandshake,
   IconKey,
   IconLayout,
   IconSettings,
@@ -15,18 +16,27 @@ import {
   IconWallet,
 } from "@/components/crm/icons";
 
+const SIDEBAR_WIDTH = "w-[220px]";
+export const CRM_SIDEBAR_WIDTH_CLASS = "md:pl-[220px]";
+
 const MAIN_NAV = [
   { href: "/crm/dashboard", label: "Dashboard", icon: IconLayout, match: "exact" as const },
   { href: "/crm/properties", label: "Объекты", icon: IconBuilding, match: "prefix" as const },
   { href: "/crm/guests", label: "Гости", icon: IconUsers, match: "prefix" as const },
   { href: "/crm/bookings", label: "Бронирования", icon: IconCalendar, match: "prefix" as const },
   {
+    href: "/crm/finance/owners",
+    label: "Собственники",
+    icon: IconHandshake,
+    match: "owners" as const,
+  },
+  {
     href: "/crm/long-term",
     label: "Долгосрочная аренда",
     icon: IconKey,
     match: "prefix" as const,
   },
-  { href: "/crm/sales/properties", label: "Продажи", icon: IconTag, match: "sales" as const },
+  { href: "/crm/sales", label: "Продажи", icon: IconTag, match: "sales" as const },
   {
     href: "/crm/presentations",
     label: "Презентации",
@@ -45,11 +55,22 @@ const FINANCE_SUB = [
   { href: "/crm/finance/reports", label: "Отчёты", exact: false },
 ] as const;
 
+const SALES_SUB = [
+  { href: "/crm/sales/properties", label: "Объекты", exact: false },
+  { href: "/crm/sales/clients", label: "Клиенты", exact: false },
+] as const;
+
 function isActive(pathname: string, href: string, match: string) {
   if (match === "exact") return pathname === href;
-  if (match === "finance") return pathname === "/crm/finance" || pathname.startsWith("/crm/finance/");
+  if (match === "finance") {
+    if (pathname.startsWith("/crm/finance/owners")) return false;
+    return pathname === "/crm/finance" || pathname.startsWith("/crm/finance/");
+  }
   if (match === "sales") {
     return pathname === "/crm/sales" || pathname.startsWith("/crm/sales/");
+  }
+  if (match === "owners") {
+    return pathname.startsWith("/crm/finance/owners");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -61,10 +82,14 @@ type Props = {
 
 export function CrmSidebar({ mobileOpen = false, onClose }: Props) {
   const pathname = usePathname();
-  const financeOpen = pathname.startsWith("/crm/finance");
+  const financeOpen =
+    pathname.startsWith("/crm/finance") && !pathname.startsWith("/crm/finance/owners");
+  const salesOpen = pathname === "/crm/sales" || pathname.startsWith("/crm/sales/");
 
   const panel = (
-    <aside className="finance-sidebar flex h-full w-[176px] flex-col border-r border-[var(--finance-sidebar-border)] bg-white">
+    <aside
+      className={`finance-sidebar flex h-full ${SIDEBAR_WIDTH} flex-col border-r border-[var(--finance-sidebar-border)] bg-white`}
+    >
       <div className="flex h-14 items-center gap-2.5 px-3.5">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E9FAF4] text-[var(--finance-green)]">
           <IconHouse size={18} />
@@ -77,12 +102,49 @@ export function CrmSidebar({ mobileOpen = false, onClose }: Props) {
       <nav className="flex-1 overflow-y-auto px-2 pb-4 pt-1" aria-label="CRM">
         <ul className="space-y-0.5">
           {MAIN_NAV.map((item) => {
+            // Owners is an alias into finance/owners — skip separate top item if we
+            // only expose it under Finance; keep top-level per Stage 12.6.6 order.
+            if (item.match === "owners") {
+              const ownersActive = isActive(pathname, item.href, item.match);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href="/crm/finance/owners"
+                    onClick={onClose}
+                    title={item.label}
+                    className={`relative flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
+                      ownersActive
+                        ? "bg-[var(--finance-blue-light)] font-semibold text-[var(--finance-blue)]"
+                        : "font-medium text-[#3A4863] hover:bg-[var(--finance-hover)]"
+                    }`}
+                  >
+                    {ownersActive ? (
+                      <span
+                        className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r bg-[var(--finance-blue)]"
+                        aria-hidden
+                      />
+                    ) : null}
+                    <item.icon
+                      size={17}
+                      className={`shrink-0 ${
+                        ownersActive ? "text-[var(--finance-blue)]" : "text-[#6B7A95]"
+                      }`}
+                    />
+                    <span className="leading-tight">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            }
+
             const active = isActive(pathname, item.href, item.match);
             const Icon = item.icon;
+            const href =
+              item.match === "sales" ? "/crm/sales/properties" : item.href;
+
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href}
+                  href={href}
                   onClick={onClose}
                   title={item.label}
                   className={`relative flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
@@ -101,15 +163,39 @@ export function CrmSidebar({ mobileOpen = false, onClose }: Props) {
                     size={17}
                     className={`shrink-0 ${active ? "text-[var(--finance-blue)]" : "text-[#6B7A95]"}`}
                   />
-                  <span className="line-clamp-2 leading-tight">{item.label}</span>
+                  <span className="leading-tight">{item.label}</span>
                 </Link>
 
                 {item.match === "finance" && financeOpen ? (
-                  <ul className="mt-0.5 mb-1 ml-[46px] space-y-0.5">
+                  <ul className="mt-0.5 mb-1 ml-10 space-y-0.5">
                     {FINANCE_SUB.map((sub) => {
                       const subActive = sub.exact
                         ? pathname === sub.href
                         : pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+                      return (
+                        <li key={sub.href}>
+                          <Link
+                            href={sub.href}
+                            onClick={onClose}
+                            className={`block rounded-md px-2 py-1.5 text-[12.5px] leading-5 transition-colors ${
+                              subActive
+                                ? "bg-[var(--finance-blue-light)] font-semibold text-[var(--finance-blue)]"
+                                : "text-[#65738F] hover:bg-[var(--finance-hover)] hover:text-[#3A4863]"
+                            }`}
+                          >
+                            {sub.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+
+                {item.match === "sales" && salesOpen ? (
+                  <ul className="mt-0.5 mb-1 ml-10 space-y-0.5">
+                    {SALES_SUB.map((sub) => {
+                      const subActive =
+                        pathname === sub.href || pathname.startsWith(`${sub.href}/`);
                       return (
                         <li key={sub.href}>
                           <Link
@@ -135,15 +221,28 @@ export function CrmSidebar({ mobileOpen = false, onClose }: Props) {
 
         <div className="mt-4 border-t border-[var(--finance-sidebar-border)] pt-3">
           <Link
-            href="/crm/settings/integrations"
+            href="/crm/settings"
             onClick={onClose}
-            className={`flex h-10 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors ${
+            className={`relative flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
               pathname.startsWith("/crm/settings")
-                ? "bg-[var(--finance-blue-light)] text-[var(--finance-blue)]"
+                ? "bg-[var(--finance-blue-light)] font-semibold text-[var(--finance-blue)]"
                 : "text-[#3A4863] hover:bg-[var(--finance-hover)]"
             }`}
           >
-            <IconSettings size={17} className="text-[#6B7A95]" />
+            {pathname.startsWith("/crm/settings") ? (
+              <span
+                className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r bg-[var(--finance-blue)]"
+                aria-hidden
+              />
+            ) : null}
+            <IconSettings
+              size={17}
+              className={
+                pathname.startsWith("/crm/settings")
+                  ? "text-[var(--finance-blue)]"
+                  : "text-[#6B7A95]"
+              }
+            />
             Настройки
           </Link>
         </div>
@@ -153,10 +252,8 @@ export function CrmSidebar({ mobileOpen = false, onClose }: Props) {
 
   return (
     <>
-      {/* Desktop */}
       <div className="fixed inset-y-0 left-0 z-30 hidden md:block">{panel}</div>
 
-      {/* Mobile drawer */}
       {mobileOpen ? (
         <div className="fixed inset-0 z-40 md:hidden">
           <button

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { CrmSidebar } from "@/components/crm/crm-sidebar";
-import { IconBell, IconChevronDown, IconMenu } from "@/components/crm/icons";
+import { CrmSidebar, CRM_SIDEBAR_WIDTH_CLASS } from "@/components/crm/crm-sidebar";
+import { IconChevronDown, IconMenu } from "@/components/crm/icons";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -39,7 +39,7 @@ export function CrmShell({ email, name, children }: Props) {
     <div className="min-h-full bg-[var(--finance-bg)] text-[var(--finance-text)]">
       <CrmSidebar mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="md:pl-[176px]">
+      <div className={CRM_SIDEBAR_WIDTH_CLASS}>
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#EDF1F6] bg-white/94 px-4 backdrop-blur-sm sm:px-6">
           <button
             type="button"
@@ -51,21 +51,13 @@ export function CrmShell({ email, name, children }: Props) {
           </button>
 
           <div className="ml-auto flex items-center gap-3">
-            <button
-              type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#65738F] hover:bg-[var(--finance-hover)]"
-              aria-label="Уведомления"
-              disabled
-              title="Скоро"
-            >
-              <IconBell size={18} />
-            </button>
-
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setUserOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-lg py-1 pr-1.5 pl-1 hover:bg-[var(--finance-hover)]"
+                aria-expanded={userOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2 rounded-lg py-1 pr-1.5 pl-1 hover:bg-[var(--finance-hover)] focus-visible:outline-2 focus-visible:outline-[var(--finance-blue)]"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--finance-blue-light)] text-xs font-semibold text-[var(--finance-blue)]">
                   {initials || "U"}
@@ -82,9 +74,13 @@ export function CrmShell({ email, name, children }: Props) {
               </button>
 
               {userOpen ? (
-                <div className="absolute right-0 mt-1 w-44 rounded-lg border border-[var(--finance-border)] bg-white py-1 shadow-[var(--finance-shadow)]">
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-1 w-44 rounded-lg border border-[var(--finance-border)] bg-white py-1 shadow-[var(--finance-shadow)]"
+                >
                   <button
                     type="button"
+                    role="menuitem"
                     disabled={busy}
                     onClick={onLogout}
                     className="w-full px-3 py-2 text-left text-[13px] text-[var(--finance-text)] hover:bg-[var(--finance-hover)] disabled:opacity-60"

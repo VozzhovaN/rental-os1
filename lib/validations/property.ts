@@ -71,8 +71,5 @@ export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;
 
 export function formatZodError(error: z.ZodError) {
-  return error.issues.map((issue) => {
-    const path = issue.path.join(".") || "body";
-    return `${path}: ${issue.message}`;
-  });
+  return error.issues.map((issue) => issue.message);
 }

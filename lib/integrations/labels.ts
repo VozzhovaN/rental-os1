@@ -9,20 +9,26 @@ export const integrationStatusLabels: Record<IntegrationStatus, string> = {
 };
 
 export const syncDirectionLabels: Record<SyncDirection, string> = {
-  IMPORT: "IMPORT",
-  EXPORT: "EXPORT",
+  IMPORT: "Импорт",
+  EXPORT: "Экспорт",
 };
 
 export const syncEntityTypeLabels: Record<SyncEntityType, string> = {
-  LISTING: "Listing",
-  BOOKING: "Booking",
-  AVAILABILITY: "Availability",
-  PRICE: "Price",
+  LISTING: "Объявление",
+  BOOKING: "Бронирование",
+  AVAILABILITY: "Занятость",
+  PRICE: "Цена",
 };
 
 export const syncLogStatusLabels: Record<SyncLogStatus, string> = {
-  STARTED: "STARTED",
-  SUCCESS: "SUCCESS",
-  ERROR: "ERROR",
-  SKIPPED: "SKIPPED",
+  STARTED: "Запущено",
+  SUCCESS: "Успешно",
+  ERROR: "Ошибка",
+  SKIPPED: "Пропущено",
+};
+
+export const providerDisplayNames: Record<string, string> = {
+  AVITO: "Авито",
+  CIAN: "ЦИАН",
+  DOMCLICK: "Домклик",
 };

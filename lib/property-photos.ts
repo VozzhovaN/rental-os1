@@ -238,6 +238,28 @@ export async function deletePropertyPhoto(propertyId: string, photoId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.longTermListingPhoto.deleteMany({ where: { photoId: photo.id } });
     await tx.saleListingPhoto.deleteMany({ where: { propertyPhotoId: photo.id } });
+    await tx.presentationItemPhoto.deleteMany({ where: { propertyPhotoId: photo.id } });
+
+    // Cover refs use onDelete: SetNull; reassign to another selected photo when possible.
+    const itemsUsingCover = await tx.presentationItem.findMany({
+      where: { coverPhotoId: photo.id },
+      select: { id: true },
+    });
+    for (const item of itemsUsingCover) {
+      const nextCover = await tx.presentationItemPhoto.findFirst({
+        where: {
+          presentationItemId: item.id,
+          propertyPhotoId: { not: photo.id },
+        },
+        orderBy: { sortOrder: "asc" },
+        select: { propertyPhotoId: true },
+      });
+      await tx.presentationItem.update({
+        where: { id: item.id },
+        data: { coverPhotoId: nextCover?.propertyPhotoId ?? null },
+      });
+    }
+
     await tx.propertyPhoto.delete({ where: { id: photo.id } });
 
     if (photo.isCover) {

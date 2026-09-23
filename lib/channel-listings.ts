@@ -93,6 +93,17 @@ function conflictFromPrisma(error: unknown, channelCode?: string): never {
   throw error;
 }
 
+export async function getAvitoChannelListings() {
+  return prisma.channelListing.findMany({
+    where: { salesChannel: { code: "AVITO" } },
+    include: {
+      salesChannel: true,
+      property: { select: { id: true, name: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
 export async function getPropertyChannelListings(propertyId: string) {
   return prisma.channelListing.findMany({
     where: { propertyId },

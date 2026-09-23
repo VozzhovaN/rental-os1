@@ -101,6 +101,13 @@ export async function disconnectAvito() {
     providerAccountId: null,
     lastError: null,
   });
+
+  // Keep ChannelListing rows (externalId mapping) but stop sync until reconnect.
+  const channel = await getAvitoChannel();
+  await prisma.channelListing.updateMany({
+    where: { salesChannelId: channel.id, status: "ACTIVE" },
+    data: { status: "INACTIVE", syncStatus: "NOT_CONNECTED" },
+  });
 }
 
 export async function syncListings(client: SalesChannelAdapter = adapter()) {

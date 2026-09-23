@@ -23,6 +23,26 @@
   --finance-purple: #9565e3;
   --finance-shadow: 0 3px 12px rgba(25, 45, 80, 0.035);
 
+  /* Semantic aliases (Stage 12.6.6) */
+  --color-primary: var(--finance-blue);
+  --color-success: var(--finance-green);
+  --color-warning: #d97706;
+  --color-danger: var(--finance-red);
+  --color-neutral: #64748b;
+  --color-background: var(--finance-bg);
+  --color-surface: var(--finance-card);
+  --color-border: var(--finance-border);
+  --color-text-primary: var(--finance-text);
+  --color-text-secondary: var(--finance-text-secondary);
+
+  --type-page-title: 1.5rem;
+  --type-section-title: 1rem;
+  --type-card-title: 0.9375rem;
+  --type-body: 0.875rem;
+  --type-secondary: 0.8125rem;
+  --type-caption: 0.75rem;
+  --type-kpi: 1.5rem;
+
   --finance-st-profit: #119b81;
   --finance-lt-profit: #4f9bf7;
   --finance-sales-profit: #9b63e6;

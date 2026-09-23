@@ -7,6 +7,7 @@ import {
   checkOutBooking,
   createBooking,
   deleteBooking,
+  getAllowedBookingStatuses,
   updateBooking,
 } from "@/lib/bookings";
 import { prisma } from "@/lib/prisma";
@@ -202,5 +203,13 @@ describe("bookings", () => {
         }),
       (error: unknown) => error instanceof BookingError && error.code === "VALIDATION",
     );
+  });
+
+  it("getAllowedBookingStatuses mirrors FSM (no illegal options for terminal)", () => {
+    assert.deepEqual(getAllowedBookingStatuses("COMPLETED"), ["COMPLETED"]);
+    assert.deepEqual(getAllowedBookingStatuses("CANCELLED"), ["CANCELLED"]);
+    assert.ok(getAllowedBookingStatuses("PENDING").includes("CONFIRMED"));
+    assert.ok(getAllowedBookingStatuses("CONFIRMED").includes("CANCELLED"));
+    assert.ok(!getAllowedBookingStatuses("CONFIRMED").includes("PENDING"));
   });
 });

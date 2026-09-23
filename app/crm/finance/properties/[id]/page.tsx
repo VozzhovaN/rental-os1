@@ -4,7 +4,11 @@ import { DonutChart, expenseSliceColor } from "@/components/finance/charts/donut
 import { CommissionPaymentForm } from "@/components/finance/commission-payment-form";
 import { calculatePropertyEconomics, resolveDashboardPeriod } from "@/lib/finance";
 import { financialCategoryLabels } from "@/lib/finance/types";
-import { formatMoney } from "@/lib/property-labels";
+import {
+  formatMoney,
+  managementTypeLabels,
+  rentCollectionModeLabels,
+} from "@/lib/property-labels";
 import { getPropertyByIdOrSlug } from "@/lib/properties";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +60,8 @@ export default async function PropertyEconomicsPage({
           </Link>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight">{property.name}</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Экономика объекта · {property.managementType} · сбор: {property.rentCollectionMode}
+            Экономика объекта · {managementTypeLabels[property.managementType]} · сбор:{" "}
+            {rentCollectionModeLabels[property.rentCollectionMode]}
           </p>
         </div>
 

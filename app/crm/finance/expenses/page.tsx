@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/crm/page-header";
 import { DonutChart, expenseSliceColor } from "@/components/finance/charts/donut-chart";
 import { ExpenseQuickForm } from "@/components/finance/expense-quick-form";
 import {
@@ -45,20 +46,19 @@ export default async function FinanceExpensesPage({
   });
 
   return (
-      <div className="space-y-6">
-        <header className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Расходы</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Структура и учёт расходов оператора за {dashboard.filters.dateFrom} —{" "}
-            {dashboard.filters.dateTo}
-          </p>
-          <Link
-            href="/crm/finance/operations"
-            className="mt-3 inline-block text-sm text-blue-600 hover:underline"
-          >
-            Полный журнал операций →
-          </Link>
-        </header>
+      <div className="space-y-5">
+        <PageHeader
+          title="Расходы"
+          subtitle={`Структура и учёт расходов оператора за ${dashboard.filters.dateFrom} — ${dashboard.filters.dateTo}`}
+          actions={
+            <Link
+              href="/crm/finance/operations"
+              className="inline-flex items-center justify-center rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+            >
+              Журнал операций
+            </Link>
+          }
+        />
 
         <section className="grid gap-3 sm:grid-cols-3">
           <SummaryCard label="Всего расходов" value={dashboard.summary.totalExpenses} />

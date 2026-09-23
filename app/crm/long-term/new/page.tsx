@@ -5,7 +5,12 @@ import { getProperties, serializeProperty } from "@/lib/properties";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewLongTermPage() {
+export default async function NewLongTermPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ propertyId?: string }>;
+}) {
+  const params = await searchParams;
   const [properties, listings] = await Promise.all([getProperties(), getLongTermListings()]);
 
   return (
@@ -22,6 +27,7 @@ export default async function NewLongTermPage() {
       <AddLongTermForm
         properties={properties.map(serializeProperty)}
         takenPropertyIds={listings.map((listing) => listing.propertyId)}
+        defaultPropertyId={params.propertyId}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/crm/page-header";
 import { PropertyEconomicsTable } from "@/components/finance/property-economics-table";
 import { financeDashboardQuerySchema, getFinanceDashboard } from "@/lib/finance";
 import { getProperties } from "@/lib/properties";
@@ -29,19 +30,19 @@ export default async function FinancePropertiesPage({
   const filterQuery = buildFilterQuery(dashboard.filters);
 
   return (
-      <div className="space-y-6">
-        <header className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Объекты</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Экономика объектов за {dashboard.filters.dateFrom} — {dashboard.filters.dateTo}
-          </p>
-          <Link
-            href={`/crm/finance${filterQuery}`}
-            className="mt-3 inline-block text-sm text-blue-600 hover:underline"
-          >
-            ← Обзор финансов
-          </Link>
-        </header>
+      <div className="space-y-5">
+        <PageHeader
+          title="Объекты"
+          subtitle={`Экономика объектов за ${dashboard.filters.dateFrom} — ${dashboard.filters.dateTo}`}
+          actions={
+            <Link
+              href={`/crm/finance${filterQuery}`}
+              className="inline-flex items-center justify-center rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+            >
+              Обзор финансов
+            </Link>
+          }
+        />
 
         <form
           method="get"

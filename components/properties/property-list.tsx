@@ -368,13 +368,13 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
         <KpiCard
           label="Активные"
           value={String(kpi.active)}
-          hint="статус ACTIVE"
+          hint={propertyStatusLabels.ACTIVE.toLowerCase()}
           icon={<IconTag size={16} />}
           iconBg="bg-[var(--finance-green-light)]"
           iconColor="text-[var(--finance-green)]"
         />
         <KpiCard
-          label="OWN"
+          label={managementTypeLabels.OWN}
           value={String(kpi.own)}
           hint="собственные"
           icon={<IconWallet size={16} />}
@@ -382,7 +382,7 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
           iconColor="text-[var(--finance-blue)]"
         />
         <KpiCard
-          label="COMMISSION"
+          label={managementTypeLabels.COMMISSION}
           value={String(kpi.commission)}
           hint="в управлении"
           icon={<IconWallet size={16} />}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/crm/page-header";
 import { formatMoney } from "@/lib/property-labels";
 import { CommissionPaymentForm } from "@/components/finance/commission-payment-form";
 import {
@@ -122,21 +123,19 @@ export function FinanceView({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Операции</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Журнал финансовых операций, расходы и корректировки.
-          </p>
-        </div>
-        <Link
-          href="/crm/finance"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Обзор
-        </Link>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Операции"
+        subtitle="Журнал финансовых операций, расходы и корректировки."
+        actions={
+          <Link
+            href="/crm/finance"
+            className="inline-flex items-center justify-center rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+          >
+            Обзор
+          </Link>
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard label="Выручка бизнеса" value={initialSummary.businessRevenue} highlight />

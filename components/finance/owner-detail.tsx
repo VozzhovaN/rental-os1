@@ -8,7 +8,8 @@ import {
   financialCategoryLabels,
   financialTypeLabels,
 } from "@/lib/finance";
-import { formatMoney } from "@/lib/property-labels";
+import { formatMoney, managementTypeLabels } from "@/lib/property-labels";
+import type { ManagementType } from "@prisma/client";
 
 type PropertyRow = {
   id: string;
@@ -174,10 +175,11 @@ export function OwnerDetail({
                 <span>
                   {p.name}{" "}
                   <span className="text-zinc-500">
-                    ({p.city}, {p.managementType})
+                    ({p.city},{" "}
+                    {managementTypeLabels[p.managementType as ManagementType] ?? p.managementType})
                   </span>
                 </span>
-                <Link href={`/crm/properties/${p.id}/edit`} className="text-xs underline">
+                <Link href={`/crm/properties/${p.id}`} className="text-xs underline">
                   Карточка
                 </Link>
               </li>

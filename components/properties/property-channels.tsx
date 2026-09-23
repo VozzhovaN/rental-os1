@@ -184,6 +184,11 @@ export function PropertyChannels({ propertyId }: PropertyChannelsProps) {
           доступна синхронизация через интеграционный слой. Остальные каналы
           привязываются вручную.
         </p>
+        <p className="mt-2 text-sm text-zinc-500">
+          Каналы вроде «По рекомендации» — это источники бронирования, а не
+          технические интеграции. Для них нет подключения к API, только учёт
+          источника в карточке объекта.
+        </p>
       </div>
 
       {error ? (
@@ -222,7 +227,7 @@ export function PropertyChannels({ propertyId }: PropertyChannelsProps) {
                       <div className="mt-1 text-sm text-zinc-600">
                         <p>
                           <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                          Подключено
+                          Источник указан
                         </p>
                         <p className="mt-1 text-zinc-500">
                           Объявление: {listing.externalId}
@@ -231,7 +236,7 @@ export function PropertyChannels({ propertyId }: PropertyChannelsProps) {
                     ) : (
                       <p className="mt-1 text-sm text-zinc-500">
                         <span className="mr-2 inline-block h-2 w-2 rounded-full bg-zinc-300" />
-                        Не подключено
+                        Источник не указан
                       </p>
                     )}
                   </div>

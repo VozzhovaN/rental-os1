@@ -1,6 +1,7 @@
 import { CianPrepareAction } from "@/components/long-term/cian-prepare-action";
 import { CianXmlPreviewActions } from "@/components/long-term/cian-xml-preview-actions";
 import { formatDateTime } from "@/lib/format";
+import { providerCapabilityLabels } from "@/lib/provider-capability-labels";
 import { publicationStatusLabels } from "@/lib/publication-labels";
 import type { CianPublicationDiagnosticsView } from "@/lib/publications/providers/cian";
 import type { CianListingPreviewResult } from "@/lib/publications/providers/cian";
@@ -31,7 +32,7 @@ function IssueList({
 function statusLabel(diagnostics: CianPublicationDiagnosticsView) {
   const status = diagnostics.publication?.status;
   if (!status) {
-    return "Нет Publication";
+    return "Нет записи публикации";
   }
   // «Опубликовано» только при подтверждённом успехе провайдера (lastSuccessAt).
   // Пока CIAN_STATUS_SYNC заблокирован, feed inclusion ≠ PUBLISHED.
@@ -39,7 +40,7 @@ function statusLabel(diagnostics: CianPublicationDiagnosticsView) {
     if (diagnostics.publication?.lastSuccessAt) {
       return publicationStatusLabels.PUBLISHED;
     }
-    return "PUBLISHED (ожидает подтверждения площадки)";
+    return "Опубликовано (ожидает подтверждения площадки)";
   }
   return publicationStatusLabels[status];
 }
@@ -61,7 +62,7 @@ export function CianPublicationDiagnostics({
         ЦИАН — публикация
       </h2>
       <p className="text-sm font-medium">
-        {preview.ready ? "READY FOR CIAN XML" : "NOT READY FOR CIAN XML"}
+        {preview.ready ? "Готово к XML-фиду ЦИАН" : "Не готово к XML-фиду"}
       </p>
       <p className="text-xs text-zinc-500">
         Один аккаунт ЦИАН → один фид → несколько объявлений. «Опубликовано» только после
@@ -70,7 +71,7 @@ export function CianPublicationDiagnostics({
 
       <dl className="grid gap-2 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-zinc-500">Статус Publication</dt>
+          <dt className="text-zinc-500">Статус публикации</dt>
           <dd>{statusLabel(diagnostics)}</dd>
         </div>
         <div>
@@ -103,12 +104,12 @@ export function CianPublicationDiagnostics({
           </dd>
         </div>
         <div>
-          <dt className="text-zinc-500">Status sync</dt>
-          <dd className="font-mono text-xs">{diagnostics.statusSync}</dd>
+          <dt className="text-zinc-500">Синхронизация статуса</dt>
+          <dd className="text-xs">{providerCapabilityLabels[diagnostics.statusSync]}</dd>
         </div>
         <div>
-          <dt className="text-zinc-500">Unpublish</dt>
-          <dd className="font-mono text-xs">{diagnostics.unpublish}</dd>
+          <dt className="text-zinc-500">Снятие с публикации</dt>
+          <dd className="text-xs">{providerCapabilityLabels[diagnostics.unpublish]}</dd>
         </div>
       </dl>
 

@@ -8,12 +8,19 @@ import { parseCreateLongTermListing } from "@/lib/validations/long-term-listing"
 export function AddLongTermForm({
   properties,
   takenPropertyIds,
+  defaultPropertyId,
 }: {
   properties: PropertyDTO[];
   takenPropertyIds: string[];
+  defaultPropertyId?: string;
 }) {
   const router = useRouter();
-  const [propertyId, setPropertyId] = useState("");
+  const [propertyId, setPropertyId] = useState(() => {
+    if (defaultPropertyId && !takenPropertyIds.includes(defaultPropertyId)) {
+      return defaultPropertyId;
+    }
+    return "";
+  });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

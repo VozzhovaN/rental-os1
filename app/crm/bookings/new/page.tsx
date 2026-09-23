@@ -28,12 +28,20 @@ export default async function NewBookingPage({
   const backHref = safeCrmPath(returnTo) ?? "/crm/bookings";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5">
       <div>
-        <Link href={backHref} className="text-sm text-zinc-500 hover:text-zinc-800">
+        <Link
+          href={backHref}
+          className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
+        >
           {safeCrmPath(returnTo) ? "← К календарю" : "← К списку броней"}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Новое бронирование</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--finance-text)]">
+          Новое бронирование
+        </h1>
+        <p className="mt-1 text-sm text-[var(--finance-text-secondary)]">
+          Создайте бронь для гостя с датами и стоимостью
+        </p>
       </div>
       <BookingForm
         properties={properties}

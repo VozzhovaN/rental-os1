@@ -56,6 +56,26 @@ describe("avito channel listing disconnect", () => {
     assert.equal(enabled.id, listing.id);
   });
 
+  it("disconnectAvito переводит ACTIVE ChannelListing в INACTIVE без удаления", async () => {
+    const { channel, property } = await resetFixtures();
+    const { connectAvito, disconnectAvito } = await import("@/lib/integrations/avito-service");
+    await connectAvito();
+    const listing = await createChannelListing(property.id, {
+      salesChannelId: channel.id,
+      externalId: "222222222",
+      externalUrl: "https://www.avito.ru/test/222222222",
+    });
+    assert.equal(listing.status, "ACTIVE");
+
+    await disconnectAvito();
+
+    const after = await prisma.channelListing.findUnique({ where: { id: listing.id } });
+    assert.ok(after);
+    assert.equal(after.status, "INACTIVE");
+    assert.equal(after.syncStatus, "NOT_CONNECTED");
+    assert.equal(after.externalId, "222222222");
+  });
+
   it("по-прежнему запрещает дубликат externalId", async () => {
     const { channel, property } = await resetFixtures();
     const second = await prisma.property.create({

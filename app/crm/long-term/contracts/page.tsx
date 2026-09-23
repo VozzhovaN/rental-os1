@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { IconPlus } from "@/components/crm/icons";
+import { PageHeader } from "@/components/crm/page-header";
 import { listLongTermContracts, getContractFinanceSummary } from "@/lib/finance/long-term-finance";
 import { formatMoney } from "@/lib/property-labels";
 import { formatGuestName } from "@/lib/format";
@@ -22,29 +24,34 @@ export default async function LongTermContractsPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link href="/crm/long-term" className="text-sm text-zinc-500 hover:text-zinc-800">
-            ← Долгосрочная аренда
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Договоры</h1>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/crm/long-term/listings"
-            className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium"
-          >
-            Объявления
-          </Link>
-          <Link
-            href="/crm/long-term/contracts/new"
-            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white"
-          >
-            + Новый договор
-          </Link>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <Link
+        href="/crm/long-term"
+        className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
+      >
+        ← Долгосрочная аренда
+      </Link>
+      <PageHeader
+        title="Договоры"
+        subtitle="Договоры аренды, начисления и платежи"
+        actions={
+          <>
+            <Link
+              href="/crm/long-term/listings"
+              className="inline-flex items-center justify-center rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+            >
+              Объявления
+            </Link>
+            <Link
+              href="/crm/long-term/contracts/new"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--finance-blue)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+            >
+              <IconPlus size={16} />
+              Новый договор
+            </Link>
+          </>
+        }
+      />
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
         <table className="min-w-full text-left text-sm">

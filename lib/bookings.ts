@@ -24,6 +24,11 @@ const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
   CANCELLED: ["CANCELLED"],
 };
 
+/** Allowed next statuses for CRM status select (includes current). */
+export function getAllowedBookingStatuses(from: BookingStatus): BookingStatus[] {
+  return STATUS_TRANSITIONS[from];
+}
+
 export class BookingError extends Error {
   constructor(
     message: string,
@@ -46,14 +51,30 @@ export type BookingFilters = {
   status?: BookingStatus;
 };
 
+type PropertyPhotoCover = { url: string; isCover: boolean };
+type ExternalBookingRef = { id: string };
+
 type BookingRecord = Booking & {
-  property: Pick<Property, "id" | "name" | "city" | "guests" | "status" | "type" | "area" | "address">;
+  property: Pick<
+    Property,
+    "id" | "name" | "city" | "guests" | "status" | "type" | "area" | "address"
+  > & {
+    photos?: PropertyPhotoCover[];
+  };
   guest: Pick<
     Guest,
-    "id" | "firstName" | "lastName" | "middleName" | "phone" | "messengerType" | "messengerContact"
+    | "id"
+    | "firstName"
+    | "lastName"
+    | "middleName"
+    | "phone"
+    | "email"
+    | "messengerType"
+    | "messengerContact"
   >;
   salesChannel: Pick<SalesChannel, "id" | "code" | "name">;
   channelListing: Pick<ChannelListing, "id" | "externalId" | "externalUrl" | "salesChannelId"> | null;
+  externalBookings?: ExternalBookingRef[];
 };
 
 export type BookingDTO = {
@@ -70,14 +91,31 @@ export type BookingDTO = {
   comment: string | null;
   createdAt: string;
   updatedAt: string;
+  isImported: boolean;
+  coverPhotoUrl: string | null;
   property: Pick<Property, "id" | "name" | "city" | "guests" | "status" | "type" | "area" | "address">;
   guest: Pick<
     Guest,
-    "id" | "firstName" | "lastName" | "middleName" | "phone" | "messengerType" | "messengerContact"
+    | "id"
+    | "firstName"
+    | "lastName"
+    | "middleName"
+    | "phone"
+    | "email"
+    | "messengerType"
+    | "messengerContact"
   >;
   salesChannel: Pick<SalesChannel, "id" | "code" | "name">;
   channelListing: Pick<ChannelListing, "id" | "externalId" | "externalUrl" | "salesChannelId"> | null;
 };
+
+export type BookingListPaymentDTO = {
+  paidAmount: number;
+  refundedAmount: number;
+  netPaidAmount: number;
+};
+
+export type BookingListItemDTO = BookingDTO & BookingListPaymentDTO;
 
 const bookingInclude = {
   property: {
@@ -90,6 +128,11 @@ const bookingInclude = {
       type: true,
       area: true,
       address: true,
+      photos: {
+        orderBy: [{ isCover: "desc" as const }, { sortOrder: "asc" as const }],
+        take: 1,
+        select: { url: true, isCover: true },
+      },
     },
   },
   guest: {
@@ -99,6 +142,7 @@ const bookingInclude = {
       lastName: true,
       middleName: true,
       phone: true,
+      email: true,
       messengerType: true,
       messengerContact: true,
     },
@@ -109,9 +153,21 @@ const bookingInclude = {
   channelListing: {
     select: { id: true, externalId: true, externalUrl: true, salesChannelId: true },
   },
-} as const;
+  externalBookings: {
+    select: { id: true },
+    take: 1,
+  },
+};
+
+function coverFromProperty(property: BookingRecord["property"]) {
+  return property.photos?.[0]?.url ?? null;
+}
 
 export function serializeBooking(booking: BookingRecord): BookingDTO {
+  const { photos: _photos, ...propertyRest } = booking.property as BookingRecord["property"] & {
+    photos?: PropertyPhotoCover[];
+  };
+  void _photos;
   return {
     id: booking.id,
     propertyId: booking.propertyId,
@@ -126,11 +182,57 @@ export function serializeBooking(booking: BookingRecord): BookingDTO {
     comment: booking.comment,
     createdAt: booking.createdAt.toISOString(),
     updatedAt: booking.updatedAt.toISOString(),
-    property: booking.property,
+    isImported: (booking.externalBookings?.length ?? 0) > 0,
+    coverPhotoUrl: coverFromProperty(booking.property),
+    property: propertyRest,
     guest: booking.guest,
     salesChannel: booking.salesChannel,
     channelListing: booking.channelListing,
   };
+}
+
+/** Batch payment aggregates for list UI — no full refund rows. */
+export async function getBookingListPaymentSummaries(
+  bookingIds: string[],
+): Promise<Map<string, BookingListPaymentDTO>> {
+  const map = new Map<string, BookingListPaymentDTO>();
+  for (const id of bookingIds) {
+    map.set(id, { paidAmount: 0, refundedAmount: 0, netPaidAmount: 0 });
+  }
+  if (bookingIds.length === 0) return map;
+
+  const payments = await prisma.bookingPayment.findMany({
+    where: { bookingId: { in: bookingIds } },
+    select: {
+      bookingId: true,
+      amount: true,
+      refunds: { select: { amount: true } },
+    },
+  });
+
+  for (const payment of payments) {
+    const current = map.get(payment.bookingId) ?? {
+      paidAmount: 0,
+      refundedAmount: 0,
+      netPaidAmount: 0,
+    };
+    const refunded = payment.refunds.reduce((sum, r) => sum + r.amount, 0);
+    current.paidAmount += payment.amount;
+    current.refundedAmount += refunded;
+    current.netPaidAmount = current.paidAmount - current.refundedAmount;
+    map.set(payment.bookingId, current);
+  }
+
+  return map;
+}
+
+export function serializeBookingListItem(
+  booking: BookingRecord,
+  payments?: BookingListPaymentDTO,
+): BookingListItemDTO {
+  const base = serializeBooking(booking);
+  const pay = payments ?? { paidAmount: 0, refundedAmount: 0, netPaidAmount: 0 };
+  return { ...base, ...pay };
 }
 
 function toDate(value: string, field: string) {

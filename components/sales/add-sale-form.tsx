@@ -8,12 +8,19 @@ import { parseCreateSaleListing } from "@/lib/validations/sale-listing";
 export function AddSaleForm({
   properties,
   takenPropertyIds,
+  defaultPropertyId,
 }: {
   properties: PropertyDTO[];
   takenPropertyIds: string[];
+  defaultPropertyId?: string;
 }) {
   const router = useRouter();
-  const [propertyId, setPropertyId] = useState("");
+  const [propertyId, setPropertyId] = useState(() => {
+    if (defaultPropertyId && !takenPropertyIds.includes(defaultPropertyId)) {
+      return defaultPropertyId;
+    }
+    return "";
+  });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);

@@ -24,21 +24,30 @@ export default async function EditBookingPage({
     notFound();
   }
 
+  const dto = serializeBooking(booking);
   const properties = (await getProperties()).map(serializeProperty);
   const guests = (await getGuests()).map(serializeGuest);
   const salesChannels = (await getActiveSalesChannels()).map(serializeSalesChannel);
-  const backHref = safeCrmPath(returnTo) ?? `/crm/bookings/${booking.id}`;
+  const backHref = safeCrmPath(returnTo) ?? `/crm/bookings/${dto.id}`;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5">
       <div>
-        <Link href={backHref} className="text-sm text-zinc-500 hover:text-zinc-800">
+        <Link
+          href={backHref}
+          className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
+        >
           {safeCrmPath(returnTo) ? "← Назад" : "← К карточке брони"}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Редактирование бронирования</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--finance-text)]">
+          Редактирование бронирования
+        </h1>
+        <p className="mt-1 text-sm text-[var(--finance-text-secondary)]">
+          {dto.property.name}
+        </p>
       </div>
       <BookingForm
-        booking={serializeBooking(booking)}
+        booking={dto}
         properties={properties}
         guests={guests}
         salesChannels={salesChannels}

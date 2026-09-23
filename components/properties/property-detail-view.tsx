@@ -165,7 +165,10 @@ function HeaderMenu({
       label: "Презентация · долгосрок",
     });
   } else {
-    items.push({ href: "/crm/long-term/new", label: "Настроить долгосрок" });
+    items.push({
+      href: `/crm/long-term/new?propertyId=${propertyId}`,
+      label: "Настроить долгосрок",
+    });
   }
   if (saleId) {
     items.push({ href: `/crm/sales/properties/${saleId}`, label: "Открыть продажу" });
@@ -175,7 +178,7 @@ function HeaderMenu({
     });
   } else {
     items.push({
-      href: "/crm/sales/properties/new",
+      href: `/crm/sales/properties/new?propertyId=${propertyId}`,
       label: "Добавить в продажи",
     });
   }
@@ -541,18 +544,28 @@ export function PropertyDetailView({
           <SectionCard title="Собственник">
             {owner ? (
               <dl className="grid grid-cols-2 gap-3">
-                <Fact label="Owner" value={owner.name} />
-                <Fact label="Телефон" value={owner.phone || "—"} />
+                <Fact
+                  label="Owner"
+                  value={
+                    <Link
+                      href={`/crm/finance/owners/${owner.id}`}
+                      className="font-medium text-[var(--finance-blue)] hover:underline"
+                    >
+                      {owner.name}
+                    </Link>
+                  }
+                />
+                <Fact label="Телефон" value={owner.phone || "Не указан"} />
               </dl>
             ) : (
               <dl className="grid grid-cols-2 gap-3">
                 <Fact
                   label="Имя (legacy)"
-                  value={property.ownerName || "—"}
+                  value={property.ownerName || "Не указан"}
                 />
                 <Fact
                   label="Телефон (legacy)"
-                  value={property.ownerPhone || "—"}
+                  value={property.ownerPhone || "Не указан"}
                 />
               </dl>
             )}
@@ -719,7 +732,7 @@ export function PropertyDetailView({
               Долгосрочная аренда не настроена
             </p>
             <Link
-              href="/crm/long-term/new"
+              href={`/crm/long-term/new?propertyId=${property.id}`}
               className="mt-4 inline-flex rounded-xl bg-[var(--finance-blue)] px-4 py-2 text-sm font-medium text-white"
             >
               Настроить
@@ -777,7 +790,7 @@ export function PropertyDetailView({
               Объект не выставлен на продажу
             </p>
             <Link
-              href="/crm/sales/properties/new"
+              href={`/crm/sales/properties/new?propertyId=${property.id}`}
               className="mt-4 inline-flex rounded-xl bg-[var(--finance-blue)] px-4 py-2 text-sm font-medium text-white"
             >
               Добавить в продажи

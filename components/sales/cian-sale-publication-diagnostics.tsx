@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { CianSalePrepareAction } from "@/components/sales/cian-sale-prepare-action";
 import { CianSaleXmlPreviewActions } from "@/components/sales/cian-sale-xml-preview-actions";
 import { formatDateTime } from "@/lib/format";
+import { providerCapabilityLabels } from "@/lib/provider-capability-labels";
 import { publicationStatusLabels } from "@/lib/publication-labels";
 import type {
   CianSaleListingPreviewResult,
@@ -42,7 +43,7 @@ function statusLabel(diagnostics: CianSalePublicationDiagnosticsView) {
     if (diagnostics.publication?.lastSuccessAt) {
       return publicationStatusLabels.PUBLISHED;
     }
-    return "PUBLISHED (ожидает подтверждения площадки)";
+    return "Опубликовано (ожидает подтверждения площадки)";
   }
   return publicationStatusLabels[status];
 }
@@ -86,7 +87,7 @@ export function CianSalePublicationDiagnostics({
         </div>
         <div>
           <dt className="text-zinc-400">В фиде</dt>
-          <dd>{diagnostics.includedInFeed ? "YES" : "NO"}</dd>
+          <dd>{diagnostics.includedInFeed ? "Да" : "Нет"}</dd>
         </div>
         <div>
           <dt className="text-zinc-400">Payload changed</dt>
@@ -113,12 +114,12 @@ export function CianSalePublicationDiagnostics({
           <dd>{publication?.lastError || "—"}</dd>
         </div>
         <div>
-          <dt className="text-zinc-400">Status sync</dt>
-          <dd className="font-mono">{diagnostics.statusSync}</dd>
+          <dt className="text-zinc-400">Синхронизация статуса</dt>
+          <dd>{providerCapabilityLabels[diagnostics.statusSync]}</dd>
         </div>
         <div>
-          <dt className="text-zinc-400">Unpublish</dt>
-          <dd className="font-mono">{diagnostics.unpublish}</dd>
+          <dt className="text-zinc-400">Снятие с публикации</dt>
+          <dd>{providerCapabilityLabels[diagnostics.unpublish]}</dd>
         </div>
       </dl>
 

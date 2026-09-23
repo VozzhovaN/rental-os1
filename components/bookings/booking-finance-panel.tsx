@@ -4,6 +4,11 @@ import { FormEvent, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/property-labels";
 import type { BookingFinanceState } from "@/lib/finance";
+import {
+  bookingPaymentBadgeClass,
+  bookingPaymentUiLabels,
+  bookingPaymentUiState,
+} from "@/lib/booking-ui";
 
 type Props = {
   bookingId: string;
@@ -30,6 +35,12 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
 
   const f = initialFinance;
   const b = f.breakdown;
+  const payState = bookingPaymentUiState(b.grossAmount, {
+    paidAmount: f.paidAmount,
+    refundedAmount: f.refundedAmount,
+    netPaidAmount: f.netPaidAmount,
+  });
+  const refundTarget = f.payments.find((p) => p.id === refundFor);
 
   async function submitPayment(event: FormEvent) {
     event.preventDefault();
@@ -50,93 +61,98 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
       return;
     }
     setShowPaymentForm(false);
-    setPaymentForm({ amount: "", paidAt: new Date().toISOString().slice(0, 10), method: "", note: "" });
+    setPaymentForm({
+      amount: "",
+      paidAt: new Date().toISOString().slice(0, 10),
+      method: "",
+      note: "",
+    });
     startTransition(() => router.refresh());
   }
 
   async function submitRefund(event: FormEvent) {
     event.preventDefault();
-    if (!refundFor) return;
+    if (!refundFor || !refundTarget) return;
+    const amount = Number(refundForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > refundTarget.netAmount) {
+      setError(`Сумма возврата должна быть от 1 до ${refundTarget.netAmount} ₽`);
+      return;
+    }
+    if (
+      !window.confirm(
+        `Оформить возврат ${amount} ₽?\nДоступно к возврату: ${refundTarget.netAmount} ₽`,
+      )
+    ) {
+      return;
+    }
     setError(null);
-    const response = await fetch(`/api/bookings/${bookingId}/payments/${refundFor}/refund`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: Number(refundForm.amount),
-        refundedAt: refundForm.refundedAt,
-        note: refundForm.note,
-      }),
-    });
+    const response = await fetch(
+      `/api/bookings/${bookingId}/payments/${refundFor}/refund`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          refundedAt: refundForm.refundedAt,
+          note: refundForm.note,
+        }),
+      },
+    );
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       setError(body?.error || "Не удалось оформить возврат");
       return;
     }
     setRefundFor(null);
-    setRefundForm({ amount: "", refundedAt: new Date().toISOString().slice(0, 10), note: "" });
+    setRefundForm({
+      amount: "",
+      refundedAt: new Date().toISOString().slice(0, 10),
+      note: "",
+    });
     startTransition(() => router.refresh());
   }
 
   return (
-    <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
+    <section className="finance-card space-y-4 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold tracking-tight">Финансы</h2>
+        <div>
+          <h2 className="text-base font-semibold text-[var(--finance-text)]">Оплата</h2>
+          <span
+            className={`mt-1 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${bookingPaymentBadgeClass[payState]}`}
+          >
+            {bookingPaymentUiLabels[payState]}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => setShowPaymentForm((v) => !v)}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
+          className="rounded-xl bg-[var(--finance-blue)] px-3 py-2 text-sm font-medium text-white"
         >
-          Добавить оплату
+          + Добавить оплату
         </button>
       </div>
 
-      <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-        <Stat label="Стоимость проживания" value={formatMoney(b.grossAmount)} />
-        <Stat label="Оплачено (нетто)" value={formatMoney(f.netPaidAmount)} />
+      <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Стоимость бронирования" value={formatMoney(b.grossAmount)} />
+        <Stat label="Оплачено" value={formatMoney(f.netPaidAmount)} />
         <Stat
-          label={f.overpaymentAmount > 0 ? "Переплата" : "Осталось оплатить"}
+          label={f.overpaymentAmount > 0 ? "Переплата" : "Осталось"}
           value={
             f.overpaymentAmount > 0
               ? formatMoney(f.overpaymentAmount)
               : formatMoney(f.remainingAmount)
           }
         />
-        <Stat
-          label={`Комиссия управляющего (${formatRate(b.commissionRatePercent)}%)`}
-          value={formatMoney(b.commissionAmount)}
-        />
-        <Stat
-          label={b.isOperatorOwned ? "Собственнику (собственный объект)" : "Собственнику"}
-          value={formatMoney(b.ownerShareAmount)}
-        />
-        <Stat
-          label="Комиссия с полученных"
-          value={formatMoney(f.commissionOnReceived)}
-        />
-        {b.isOperatorOwned ? (
-          <Stat label="Арендная выручка (OWN)" value={formatMoney(f.netPaidAmount)} />
-        ) : (
-          <>
-            <Stat label="Комиссия начислена" value={formatMoney(f.commissionAccrued)} />
-            <Stat label="Доля собственнику" value={formatMoney(f.ownerShareOnReceived)} />
-          </>
-        )}
+        <Stat label="Возвращено" value={formatMoney(f.refundedAmount)} />
       </dl>
-
-      {b.isOperatorOwned ? (
-        <p className="text-xs text-zinc-500">
-          Собственный объект — выручка бизнеса = net оплаченная аренда.
-        </p>
-      ) : (
-        <p className="text-xs text-zinc-500">
-          COMMISSION: выручка бизнеса = полученные платежи комиссии (см. /commission).
-        </p>
-      )}
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       {showPaymentForm ? (
-        <form onSubmit={submitPayment} className="grid gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-4 sm:grid-cols-2">
+        <form
+          onSubmit={submitPayment}
+          className="grid gap-3 rounded-xl border border-[var(--finance-border)] bg-[#F8FAFC] p-4 sm:grid-cols-2"
+        >
           <Field label="Сумма, ₽">
             <input
               type="number"
@@ -144,8 +160,10 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
               step={1}
               required
               value={paymentForm.amount}
-              onChange={(e) => setPaymentForm((s) => ({ ...s, amount: e.target.value }))}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              onChange={(e) =>
+                setPaymentForm((s) => ({ ...s, amount: e.target.value }))
+              }
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
           <Field label="Дата">
@@ -153,102 +171,133 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
               type="date"
               required
               value={paymentForm.paidAt}
-              onChange={(e) => setPaymentForm((s) => ({ ...s, paidAt: e.target.value }))}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              onChange={(e) =>
+                setPaymentForm((s) => ({ ...s, paidAt: e.target.value }))
+              }
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
           <Field label="Метод">
             <input
               value={paymentForm.method}
-              onChange={(e) => setPaymentForm((s) => ({ ...s, method: e.target.value }))}
+              onChange={(e) =>
+                setPaymentForm((s) => ({ ...s, method: e.target.value }))
+              }
               placeholder="наличные / перевод / …"
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
           <Field label="Комментарий">
             <input
               value={paymentForm.note}
-              onChange={(e) => setPaymentForm((s) => ({ ...s, note: e.target.value }))}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              onChange={(e) =>
+                setPaymentForm((s) => ({ ...s, note: e.target.value }))
+              }
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
-          <div className="sm:col-span-2">
+          <div className="flex gap-2 sm:col-span-2">
             <button
               type="submit"
               disabled={pending}
-              className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+              className="rounded-xl bg-[var(--finance-blue)] px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
               Сохранить оплату
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPaymentForm(false)}
+              className="rounded-xl border border-[var(--finance-border)] px-3 py-2 text-sm"
+            >
+              Отмена
             </button>
           </div>
         </form>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-600">
-            <tr>
-              <th className="py-2 pr-3 font-medium">Дата</th>
-              <th className="py-2 pr-3 font-medium">Сумма</th>
-              <th className="py-2 pr-3 font-medium">Возврат</th>
-              <th className="py-2 pr-3 font-medium">Метод</th>
-              <th className="py-2 pr-3 font-medium">Комментарий</th>
-              <th className="py-2 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {f.payments.length === 0 ? (
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-[var(--finance-text)]">
+          История оплат
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-[var(--finance-border)] text-[#64748B]">
               <tr>
-                <td colSpan={6} className="py-4 text-zinc-500">
-                  Платежей пока нет. CONFIRMED не означает оплату.
-                </td>
+                <th className="py-2 pr-3 font-medium">Дата</th>
+                <th className="py-2 pr-3 font-medium">Сумма</th>
+                <th className="py-2 pr-3 font-medium">Тип</th>
+                <th className="py-2 pr-3 font-medium">Возврат</th>
+                <th className="py-2 font-medium">Действия</th>
               </tr>
-            ) : (
-              f.payments.map((p) => (
-                <tr key={p.id} className="border-b border-zinc-100">
-                  <td className="py-2 pr-3 whitespace-nowrap">{p.paidAt.slice(0, 10)}</td>
-                  <td className="py-2 pr-3">{formatMoney(p.amount)}</td>
-                  <td className="py-2 pr-3">
-                    {p.refundedAmount > 0 ? formatMoney(p.refundedAmount) : "—"}
-                  </td>
-                  <td className="py-2 pr-3">{p.method || "—"}</td>
-                  <td className="py-2 pr-3 text-zinc-600">{p.note || "—"}</td>
-                  <td className="py-2">
-                    {p.netAmount > 0 ? (
-                      <button
-                        type="button"
-                        className="text-sm text-zinc-600 underline hover:text-zinc-900"
-                        onClick={() => {
-                          setRefundFor(p.id);
-                          setRefundForm((s) => ({
-                            ...s,
-                            amount: String(p.netAmount),
-                          }));
-                        }}
-                      >
-                        Возврат
-                      </button>
-                    ) : null}
+            </thead>
+            <tbody>
+              {f.payments.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-4 text-[#64748B]">
+                    Платежей пока нет. Подтверждённая бронь не означает оплату.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                f.payments.map((p) => (
+                  <tr key={p.id} className="border-b border-[var(--finance-border)]">
+                    <td className="py-2.5 pr-3 whitespace-nowrap">
+                      {p.paidAt.slice(0, 10)}
+                    </td>
+                    <td className="py-2.5 pr-3 tabular-nums">
+                      {formatMoney(p.amount)}
+                    </td>
+                    <td className="py-2.5 pr-3">Оплата</td>
+                    <td className="py-2.5 pr-3 tabular-nums">
+                      {p.refundedAmount > 0 ? formatMoney(p.refundedAmount) : "—"}
+                    </td>
+                    <td className="py-2.5">
+                      {p.netAmount > 0 ? (
+                        <button
+                          type="button"
+                          className="min-h-9 text-sm text-[var(--finance-blue)] hover:underline"
+                          onClick={() => {
+                            setRefundFor(p.id);
+                            setRefundForm((s) => ({
+                              ...s,
+                              amount: String(p.netAmount),
+                            }));
+                          }}
+                        >
+                          Возврат
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {refundFor ? (
-        <form onSubmit={submitRefund} className="grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 sm:grid-cols-2">
-          <p className="sm:col-span-2 text-sm text-amber-900">Возврат по платежу (исходная оплата сохраняется)</p>
+      {refundFor && refundTarget ? (
+        <form
+          onSubmit={submitRefund}
+          className="grid gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:grid-cols-2"
+        >
+          <p className="sm:col-span-2 text-sm text-amber-900">
+            Доступно к возврату:{" "}
+            <strong className="tabular-nums">
+              {formatMoney(refundTarget.netAmount)}
+            </strong>
+          </p>
           <Field label="Сумма возврата, ₽">
             <input
               type="number"
               min={1}
+              max={refundTarget.netAmount}
               step={1}
               required
               value={refundForm.amount}
-              onChange={(e) => setRefundForm((s) => ({ ...s, amount: e.target.value }))}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              onChange={(e) =>
+                setRefundForm((s) => ({ ...s, amount: e.target.value }))
+              }
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
           <Field label="Дата">
@@ -256,30 +305,34 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
               type="date"
               required
               value={refundForm.refundedAt}
-              onChange={(e) => setRefundForm((s) => ({ ...s, refundedAt: e.target.value }))}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              onChange={(e) =>
+                setRefundForm((s) => ({ ...s, refundedAt: e.target.value }))
+              }
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
           <Field label="Причина">
             <input
               required
               value={refundForm.note}
-              onChange={(e) => setRefundForm((s) => ({ ...s, note: e.target.value }))}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5"
+              onChange={(e) =>
+                setRefundForm((s) => ({ ...s, note: e.target.value }))
+              }
+              className="w-full rounded-lg border border-[var(--finance-border)] px-3 py-2"
             />
           </Field>
           <div className="flex items-end gap-2">
             <button
               type="submit"
               disabled={pending}
-              className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+              className="min-h-10 rounded-xl bg-[var(--finance-text)] px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
             >
               Подтвердить возврат
             </button>
             <button
               type="button"
               onClick={() => setRefundFor(null)}
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              className="min-h-10 rounded-xl border border-[var(--finance-border)] px-3 py-2 text-sm"
             >
               Отмена
             </button>
@@ -290,15 +343,13 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
   );
 }
 
-function formatRate(percent: number): string {
-  return Number.isInteger(percent) ? String(percent) : percent.toFixed(2).replace(/\.?0+$/, "");
-}
-
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-zinc-500">{label}</dt>
-      <dd className="mt-0.5 font-medium tabular-nums">{value}</dd>
+      <dt className="text-[#64748B]">{label}</dt>
+      <dd className="mt-0.5 font-semibold tabular-nums text-[var(--finance-text)]">
+        {value}
+      </dd>
     </div>
   );
 }
@@ -306,7 +357,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-zinc-600">{label}</span>
+      <span className="mb-1 block text-[#64748B]">{label}</span>
       {children}
     </label>
   );

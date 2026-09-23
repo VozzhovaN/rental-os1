@@ -227,6 +227,52 @@ describe("property photo storage", () => {
     );
   });
 
+  it("deletes PresentationItemPhoto joins and reassigns coverPhotoId", async () => {
+    const { property } = await resetFixtures();
+    const first = await createPropertyPhoto(property.id, {
+      url: "https://cdn.example.com/p1.jpg",
+    });
+    const second = await createPropertyPhoto(property.id, {
+      url: "https://cdn.example.com/p2.jpg",
+    });
+
+    const presentation = await prisma.presentation.create({
+      data: {
+        kind: "SHORT_TERM",
+        title: "Аудит презентация",
+        status: "DRAFT",
+        publicToken: `tok-${Date.now()}`,
+      },
+    });
+    const item = await prisma.presentationItem.create({
+      data: {
+        presentationId: presentation.id,
+        propertyId: property.id,
+        coverPhotoId: first.id,
+        sortOrder: 0,
+      },
+    });
+    await prisma.presentationItemPhoto.createMany({
+      data: [
+        { presentationItemId: item.id, propertyPhotoId: first.id, sortOrder: 0 },
+        { presentationItemId: item.id, propertyPhotoId: second.id, sortOrder: 1 },
+      ],
+    });
+
+    await deletePropertyPhoto(property.id, first.id);
+
+    assert.equal(
+      await prisma.presentationItemPhoto.count({ where: { propertyPhotoId: first.id } }),
+      0,
+    );
+    assert.equal(
+      await prisma.presentationItemPhoto.count({ where: { propertyPhotoId: second.id } }),
+      1,
+    );
+    const updated = await prisma.presentationItem.findUnique({ where: { id: item.id } });
+    assert.equal(updated?.coverPhotoId, second.id);
+  });
+
   it("PATCH setCover + DELETE via API; CSRF origin required for mutation", async () => {
     const { property } = await resetFixtures();
     const { cookie } = await createTestSessionCookie();

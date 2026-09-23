@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { IconPlus } from "@/components/crm/icons";
+import { PageHeader } from "@/components/crm/page-header";
 import { LongTermList } from "@/components/long-term/long-term-list";
 import { isFloorPlanCaption } from "@/lib/sale-photo-labels";
 import { prisma } from "@/lib/prisma";
@@ -75,30 +77,34 @@ export default async function LongTermListingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link href="/crm/long-term" className="text-sm text-zinc-500 hover:text-zinc-800">
-            ← Долгосрочная аренда
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Объявления</h1>
-          <p className="mt-1 text-sm text-zinc-500">Маркетинговые карточки. Не договоры аренды.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/crm/long-term/contracts"
-            className="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium"
-          >
-            Договоры
-          </Link>
-          <Link
-            href="/crm/long-term/new"
-            className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            + Добавить объявление
-          </Link>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <Link
+        href="/crm/long-term"
+        className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
+      >
+        ← Долгосрочная аренда
+      </Link>
+      <PageHeader
+        title="Объявления"
+        subtitle="Маркетинговые карточки. Не договоры аренды."
+        actions={
+          <>
+            <Link
+              href="/crm/long-term/contracts"
+              className="inline-flex items-center justify-center rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+            >
+              Договоры
+            </Link>
+            <Link
+              href="/crm/long-term/new"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--finance-blue)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
+            >
+              <IconPlus size={16} />
+              Добавить объявление
+            </Link>
+          </>
+        }
+      />
       <LongTermList
         listings={listings}
         propertyPhotosById={propertyPhotosById}

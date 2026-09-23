@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/crm/page-header";
 import { financeDashboardQuerySchema, getFinanceDashboard } from "@/lib/finance";
 import { formatMoney } from "@/lib/property-labels";
 
@@ -24,16 +25,19 @@ export default async function FinanceReportsPage({
   const { summary, reconciliation, commissionSummary, filters } = dashboard;
 
   return (
-      <div className="space-y-6">
-        <header className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Отчёты</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Управленческий отчёт за {filters.dateFrom} — {filters.dateTo}
-          </p>
-          <Link href="/crm/finance" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
-            ← Интерактивный обзор
-          </Link>
-        </header>
+      <div className="space-y-5">
+        <PageHeader
+          title="Отчёты"
+          subtitle={`Управленческий отчёт за ${filters.dateFrom} — ${filters.dateTo}`}
+          actions={
+            <Link
+              href="/crm/finance"
+              className="inline-flex items-center justify-center rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+            >
+              Интерактивный обзор
+            </Link>
+          }
+        />
 
         <article className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm print:shadow-none">
           <h2 className="text-lg font-semibold">Отчёт о прибылях и убытках (упрощённый)</h2>

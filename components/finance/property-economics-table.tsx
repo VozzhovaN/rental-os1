@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatMoney } from "@/lib/property-labels";
+import { formatMoney, managementTypeLabels } from "@/lib/property-labels";
+import type { ManagementType } from "@prisma/client";
 
 export type PropertyEconomicsRow = {
   propertyId: string;
@@ -39,23 +40,30 @@ function directionLabel(segmentFilter?: string) {
 }
 
 function modelBadge(row: PropertyEconomicsRow) {
-  if (row.managementType === "OWN") {
+  const type = row.managementType as ManagementType;
+  if (type === "OWN") {
     return (
       <span className="inline-flex rounded-[5px] bg-[#E9FAF4] px-1.5 py-0.5 text-[11px] font-semibold text-[#079B73]">
-        OWN
+        {managementTypeLabels.OWN}
       </span>
     );
   }
-  if (row.managementType === "COMMISSION") {
-    const rate =
-      row.commissionRateHint != null ? `COMM ${Math.round(row.commissionRateHint)}%` : "Комиссия";
+  if (type === "COMMISSION") {
+    const label =
+      row.commissionRateHint != null
+        ? `Комиссия ${Math.round(row.commissionRateHint)}%`
+        : managementTypeLabels.COMMISSION;
     return (
       <span className="inline-flex rounded-[5px] bg-[#FFF4E8] px-1.5 py-0.5 text-[11px] font-semibold text-[#D97706]">
-        {rate}
+        {label}
       </span>
     );
   }
-  return <span className="text-[var(--finance-text-muted)]">{row.managementType}</span>;
+  return (
+    <span className="text-[var(--finance-text-muted)]">
+      {managementTypeLabels[type] ?? row.managementType}
+    </span>
+  );
 }
 
 function profitTone(v: number) {

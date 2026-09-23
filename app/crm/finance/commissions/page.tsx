@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/crm/page-header";
 import { CommissionPaymentForm } from "@/components/finance/commission-payment-form";
 import {
   financeDashboardQuerySchema,
@@ -42,13 +43,11 @@ export default async function FinanceCommissionsPage({
   const propertyMap = new Map(properties.map((p) => [p.id, p.name]));
 
   return (
-      <div className="space-y-6">
-        <header className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Комиссии</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Комиссионное управление за {dashboard.filters.dateFrom} — {dashboard.filters.dateTo}
-          </p>
-        </header>
+      <div className="space-y-5">
+        <PageHeader
+          title="Комиссии"
+          subtitle={`Комиссионное управление за ${dashboard.filters.dateFrom} — ${dashboard.filters.dateTo}`}
+        />
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard label="Начислено" value={dashboard.commissionSummary.accrued} />

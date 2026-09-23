@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { formatDateTime } from "@/lib/format";
+import { providerCapabilityLabels } from "@/lib/provider-capability-labels";
 import type { AvitoSaleDiagnosticsView } from "@/lib/publications/providers/avito/sale";
 import type { DomclickSaleDiagnosticsView } from "@/lib/publications/providers/domclick/sale";
 
@@ -23,7 +24,8 @@ export function BlockedSaleProviderDiagnostics({
         <div>
           <p className="font-medium">{title}</p>
           <p className="text-xs text-zinc-500">
-            Feed: {diagnostics.capabilities.feed} · Preview: {diagnostics.capabilities.preview}
+            Фид: {providerCapabilityLabels[diagnostics.capabilities.feed]} · Предпросмотр:{" "}
+            {providerCapabilityLabels[diagnostics.capabilities.preview]}
           </p>
         </div>
         <span className="font-medium">{diagnostics.statusLabel}</span>
@@ -46,19 +48,19 @@ export function BlockedSaleProviderDiagnostics({
         </div>
         <div>
           <dt className="text-zinc-400">В фиде</dt>
-          <dd>NO</dd>
+          <dd>Нет</dd>
         </div>
         <div>
-          <dt className="text-zinc-400">Serializer</dt>
-          <dd>NOT_IMPLEMENTED</dd>
+          <dt className="text-zinc-400">Сериализатор</dt>
+          <dd>{providerCapabilityLabels.NOT_IMPLEMENTED}</dd>
         </div>
         <div>
-          <dt className="text-zinc-400">Status sync</dt>
-          <dd className="font-mono">{diagnostics.capabilities.statusSync}</dd>
+          <dt className="text-zinc-400">Синхронизация статуса</dt>
+          <dd>{providerCapabilityLabels[diagnostics.capabilities.statusSync]}</dd>
         </div>
         <div>
-          <dt className="text-zinc-400">Unpublish</dt>
-          <dd className="font-mono">{diagnostics.capabilities.unpublish}</dd>
+          <dt className="text-zinc-400">Снятие с публикации</dt>
+          <dd>{providerCapabilityLabels[diagnostics.capabilities.unpublish]}</dd>
         </div>
         <div>
           <dt className="text-zinc-400">Последняя попытка</dt>

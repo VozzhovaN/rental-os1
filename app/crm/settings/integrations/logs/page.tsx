@@ -1,16 +1,15 @@
 import { IntegrationLogs } from "@/components/integrations/integration-logs";
+import { PageHeader } from "@/components/crm/page-header";
 
 export const dynamic = "force-dynamic";
 
 export default function IntegrationLogsPage() {
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Журнал интеграций</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          История импорта и экспорта без секретов доступа.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Журнал синхронизации"
+        subtitle="История импорта и экспорта без секретов доступа"
+      />
       <IntegrationLogs />
     </div>
   );

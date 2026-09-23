@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/crm/page-header";
 import { OwnersList, type OwnerListItem } from "@/components/finance/owners-list";
 import { calculateOwnerBalance, listOwners } from "@/lib/finance";
 
@@ -18,16 +19,17 @@ export default async function FinanceOwnersPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/crm/finance" className="text-sm text-zinc-500 hover:text-zinc-800">
-          ← К финансам
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Собственники</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Расчёты и выплаты по COMMISSION объектам. Баланс вычисляется из фактов.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <Link
+        href="/crm/finance"
+        className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
+      >
+        ← К финансам
+      </Link>
+      <PageHeader
+        title="Собственники"
+        subtitle="Расчёты и выплаты по комиссионным объектам. Баланс вычисляется из фактов."
+      />
       <OwnersList owners={items} />
     </div>
   );
