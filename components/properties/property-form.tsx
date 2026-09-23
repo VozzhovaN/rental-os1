@@ -1,7 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import type { PropertyDTO } from "@/lib/properties";
 import {
   managementTypeLabels,
@@ -24,23 +29,49 @@ type PropertyFormProps = {
 
 function Field({
   label,
+  htmlFor,
   children,
+  hint,
 }: {
   label: string;
+  htmlFor?: string;
   children: ReactNode;
+  hint?: string;
 }) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-zinc-700">
+    <label className="block" htmlFor={htmlFor}>
+      <span className="mb-1.5 block text-sm font-medium text-[var(--finance-text)]">
         {label}
       </span>
       {children}
+      {hint ? (
+        <span className="mt-1 block text-xs font-normal text-[var(--finance-text-muted)]">
+          {hint}
+        </span>
+      ) : null}
     </label>
   );
 }
 
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="finance-card space-y-4 p-4 sm:p-5">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--finance-text-muted)]">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
 const inputClassName =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-zinc-900/10 focus:border-zinc-400 focus:ring-2";
+  "w-full rounded-xl border border-[var(--finance-border)] bg-white px-3 py-2 text-sm text-[var(--finance-text)] outline-none focus:border-[var(--finance-blue)] focus:ring-2 focus:ring-[var(--finance-blue)]/15";
 
 function readNumber(form: FormData, key: string) {
   const value = String(form.get(key) ?? "").trim();
@@ -59,7 +90,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
   const router = useRouter();
   const isEdit = Boolean(property);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [managementType, setManagementType] = useState(
     property?.managementType ?? "COMMISSION",
   );
@@ -71,9 +104,20 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
   const activeOwners = owners.filter((o) => o.isActive);
   const isOwn = managementType === "OWN";
 
+  useEffect(() => {
+    if (!dirty) return;
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
     setPending(true);
 
     const form = new FormData(event.currentTarget);
@@ -103,8 +147,8 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
       ownerId: isOwn ? null : ownerId || null,
       dailyPrice: readNumber(form, "dailyPrice"),
       monthlyPrice: readNumber(form, "monthlyPrice"),
-      commissionDaily: readNumber(form, "commissionDaily"),
-      commissionMonthly: readNumber(form, "commissionMonthly"),
+      commissionDaily: isOwn ? null : readNumber(form, "commissionDaily"),
+      commissionMonthly: isOwn ? null : readNumber(form, "commissionMonthly"),
     };
 
     try {
@@ -120,6 +164,7 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
       const result = (await response.json()) as {
         error?: string;
         details?: string[];
+        property?: { id: string };
       };
 
       if (!response.ok) {
@@ -127,7 +172,17 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
         throw new Error(details || result.error || "Не удалось сохранить объект");
       }
 
-      router.push("/crm/properties");
+      setDirty(false);
+      setSuccess(
+        isEdit ? "Изменения сохранены" : "Объект создан",
+      );
+
+      const nextId = result.property?.id ?? property?.id;
+      if (nextId) {
+        router.push(`/crm/properties/${nextId}`);
+      } else {
+        router.push("/crm/properties");
+      }
       router.refresh();
     } catch (submitError) {
       setError(
@@ -140,35 +195,64 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
     }
   }
 
+  function onCancel() {
+    if (dirty) {
+      const leave = window.confirm(
+        "Есть несохранённые изменения. Уйти без сохранения?",
+      );
+      if (!leave) return;
+    }
+    if (property) {
+      router.push(`/crm/properties/${property.id}`);
+    } else {
+      router.push("/crm/properties");
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form
+      onSubmit={handleSubmit}
+      onChange={() => setDirty(true)}
+      className="space-y-4"
+    >
       {error ? (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-xl bg-[var(--finance-red-light)] px-4 py-3 text-sm text-[var(--finance-red)]">
           {error}
         </p>
       ) : null}
+      {success ? (
+        <p className="rounded-xl bg-[var(--finance-green-light)] px-4 py-3 text-sm text-[var(--finance-green)]">
+          {success}
+        </p>
+      ) : null}
 
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-zinc-900">Основное</h2>
+      <Section title="Основное">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Название">
+          <Field label="Название" htmlFor="prop-name">
             <input
+              id="prop-name"
               name="name"
               required
               defaultValue={property?.name}
               className={inputClassName}
             />
           </Field>
-          <Field label="Slug (необязательно)">
+          <Field
+            label="Slug (необязательно)"
+            htmlFor="prop-slug"
+            hint="Если пусто — сгенерируется из названия"
+          >
             <input
+              id="prop-slug"
               name="slug"
               defaultValue={property?.slug}
               placeholder="sogeneriruyetsya-iz-nazvaniya"
               className={inputClassName}
             />
           </Field>
-          <Field label="Тип">
+          <Field label="Тип" htmlFor="prop-type">
             <select
+              id="prop-type"
               name="type"
               required
               defaultValue={property?.type ?? "APARTMENT"}
@@ -181,8 +265,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               ))}
             </select>
           </Field>
-          <Field label="Статус">
+          <Field label="Статус" htmlFor="prop-status">
             <select
+              id="prop-status"
               name="status"
               required
               defaultValue={property?.status ?? "ACTIVE"}
@@ -195,69 +280,32 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               ))}
             </select>
           </Field>
-          <Field label="Тип управления">
-            <select
-              name="managementType"
-              required
-              value={managementType}
-              onChange={(e) => {
-                const next = e.target.value as (typeof MANAGEMENT_TYPES)[number];
-                setManagementType(next);
-                if (next === "OWN") {
-                  setOwnerId("");
-                  setRentCollectionMode("OPERATOR");
-                }
-              }}
-              className={inputClassName}
-            >
-              {MANAGEMENT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {managementTypeLabels[type]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {!isOwn ? (
-            <Field label="Сбор аренды">
-              <select
-                name="rentCollectionMode"
-                value={rentCollectionMode}
-                onChange={(e) =>
-                  setRentCollectionMode(
-                    e.target.value as (typeof RENT_COLLECTION_MODES)[number],
-                  )
-                }
-                className={inputClassName}
-              >
-                <option value="OPERATOR">Оператор собирает аренду</option>
-                <option value="OWNER_DIRECT">Собственник собирает напрямую</option>
-              </select>
-            </Field>
-          ) : null}
         </div>
-      </section>
+      </Section>
 
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-zinc-900">Расположение</h2>
+      <Section title="Адрес">
         <div className="grid gap-4 md:grid-cols-3">
-          <Field label="Город">
+          <Field label="Город" htmlFor="prop-city">
             <input
+              id="prop-city"
               name="city"
               required
               defaultValue={property?.city}
               className={inputClassName}
             />
           </Field>
-          <Field label="Район">
+          <Field label="Район" htmlFor="prop-district">
             <input
+              id="prop-district"
               name="district"
               required
               defaultValue={property?.district}
               className={inputClassName}
             />
           </Field>
-          <Field label="Адрес">
+          <Field label="Адрес" htmlFor="prop-address">
             <input
+              id="prop-address"
               name="address"
               required
               defaultValue={property?.address}
@@ -265,13 +313,13 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
             />
           </Field>
         </div>
-      </section>
+      </Section>
 
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-zinc-900">Параметры</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Площадь, м²">
+      <Section title="Характеристики">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Площадь, м²" htmlFor="prop-area">
             <input
+              id="prop-area"
               name="area"
               type="number"
               min="0.1"
@@ -281,8 +329,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Комнаты">
+          <Field label="Комнаты" htmlFor="prop-rooms">
             <input
+              id="prop-rooms"
               name="rooms"
               type="number"
               min="0"
@@ -291,8 +340,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Спальни">
+          <Field label="Спальни" htmlFor="prop-bedrooms">
             <input
+              id="prop-bedrooms"
               name="bedrooms"
               type="number"
               min="0"
@@ -301,8 +351,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Санузлы">
+          <Field label="Ванные" htmlFor="prop-bathrooms">
             <input
+              id="prop-bathrooms"
               name="bathrooms"
               type="number"
               min="0"
@@ -311,8 +362,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Этаж">
+          <Field label="Этаж" htmlFor="prop-floor">
             <input
+              id="prop-floor"
               name="floor"
               type="number"
               min="0"
@@ -320,8 +372,9 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Этажей в доме">
+          <Field label="Этажность" htmlFor="prop-total-floors">
             <input
+              id="prop-total-floors"
               name="totalFloors"
               type="number"
               min="0"
@@ -329,8 +382,14 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Гостей">
+        </div>
+      </Section>
+
+      <Section title="Вместимость">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Гостей" htmlFor="prop-guests">
             <input
+              id="prop-guests"
               name="guests"
               type="number"
               min="1"
@@ -340,13 +399,13 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
             />
           </Field>
         </div>
-      </section>
+      </Section>
 
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-zinc-900">Цены и комиссия</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Цена посуточно, ₽">
+      <Section title="Цены">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Цена посуточно, ₽" htmlFor="prop-daily">
             <input
+              id="prop-daily"
               name="dailyPrice"
               type="number"
               min="0"
@@ -354,72 +413,116 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               className={inputClassName}
             />
           </Field>
-          <Field label="Цена помесячно, ₽">
+          <Field
+            label="Цена помесячно, ₽"
+            htmlFor="prop-monthly"
+            hint="Ориентир объекта. Цена долгосрочной карточки задаётся отдельно."
+          >
             <input
+              id="prop-monthly"
               name="monthlyPrice"
               type="number"
               min="0"
               defaultValue={property?.monthlyPrice ?? ""}
               className={inputClassName}
             />
-            <span className="mt-1 block text-xs font-normal text-zinc-500">
-              Ориентир объекта. Цена долгосрочной карточки задаётся отдельно и не
-              синхронизируется.
-            </span>
-          </Field>
-          <Field label="Комиссия посуточно, %">
-            <input
-              name="commissionDaily"
-              type="number"
-              min="0"
-              step="0.1"
-              defaultValue={property?.commissionDaily ?? ""}
-              className={inputClassName}
-            />
-          </Field>
-          <Field label="Комиссия помесячно, %">
-            <input
-              name="commissionMonthly"
-              type="number"
-              min="0"
-              step="0.1"
-              defaultValue={property?.commissionMonthly ?? ""}
-              className={inputClassName}
-            />
           </Field>
         </div>
-      </section>
+      </Section>
 
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-zinc-900">Описание</h2>
-        <Field label="Краткое описание">
-          <input
-            name="shortDescription"
-            required
-            defaultValue={property?.shortDescription}
-            className={inputClassName}
-          />
-        </Field>
-        <Field label="Полное описание">
-          <textarea
-            name="description"
-            required
-            rows={5}
-            defaultValue={property?.description}
-            className={inputClassName}
-          />
-        </Field>
-      </section>
-
-      <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-zinc-900">Владелец</h2>
-        {isOwn ? (
-          <p className="text-sm text-zinc-600">Собственный объект — structured Owner не используется.</p>
-        ) : (
-          <Field label="Собственник (COMMISSION)">
+      <Section title="Управление">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Тип управления" htmlFor="prop-mgmt">
             <select
+              id="prop-mgmt"
+              name="managementType"
+              required
+              value={managementType}
+              onChange={(e) => {
+                const next = e.target.value as (typeof MANAGEMENT_TYPES)[number];
+                setManagementType(next);
+                setDirty(true);
+                if (next === "OWN") {
+                  setOwnerId("");
+                  setRentCollectionMode("OPERATOR");
+                }
+              }}
+              className={inputClassName}
+            >
+              {MANAGEMENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type === "OWN"
+                    ? "Собственный объект"
+                    : "Объект в управлении"}{" "}
+                  ({managementTypeLabels[type]})
+                </option>
+              ))}
+            </select>
+          </Field>
+          {!isOwn ? (
+            <Field label="Сбор аренды" htmlFor="prop-rent-mode">
+              <select
+                id="prop-rent-mode"
+                name="rentCollectionMode"
+                value={rentCollectionMode}
+                onChange={(e) => {
+                  setRentCollectionMode(
+                    e.target.value as (typeof RENT_COLLECTION_MODES)[number],
+                  );
+                  setDirty(true);
+                }}
+                className={inputClassName}
+              >
+                <option value="OPERATOR">Оператор собирает аренду</option>
+                <option value="OWNER_DIRECT">
+                  Собственник собирает напрямую
+                </option>
+              </select>
+            </Field>
+          ) : null}
+          {!isOwn ? (
+            <>
+              <Field label="Комиссия посуточно, %" htmlFor="prop-comm-daily">
+                <input
+                  id="prop-comm-daily"
+                  name="commissionDaily"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  defaultValue={property?.commissionDaily ?? ""}
+                  className={inputClassName}
+                />
+              </Field>
+              <Field label="Комиссия помесячно, %" htmlFor="prop-comm-monthly">
+                <input
+                  id="prop-comm-monthly"
+                  name="commissionMonthly"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  defaultValue={property?.commissionMonthly ?? ""}
+                  className={inputClassName}
+                />
+              </Field>
+            </>
+          ) : null}
+        </div>
+      </Section>
+
+      <Section title="Собственник">
+        {isOwn ? (
+          <p className="text-sm text-[var(--finance-text-secondary)]">
+            Собственный объект — structured Owner не используется.
+          </p>
+        ) : (
+          <Field label="Собственник (Owner)" htmlFor="prop-owner">
+            <select
+              id="prop-owner"
               value={ownerId}
-              onChange={(e) => setOwnerId(e.target.value)}
+              onChange={(e) => {
+                setOwnerId(e.target.value);
+                setDirty(true);
+              }}
               className={inputClassName}
             >
               <option value="">— не выбран —</option>
@@ -431,17 +534,23 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
             </select>
           </Field>
         )}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Имя владельца (legacy)">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Field
+            label="Имя владельца (legacy)"
+            htmlFor="prop-owner-name"
+            hint="Сохраняется отдельно от Owner"
+          >
             <input
+              id="prop-owner-name"
               name="ownerName"
               required
               defaultValue={property?.ownerName}
               className={inputClassName}
             />
           </Field>
-          <Field label="Телефон владельца (legacy)">
+          <Field label="Телефон владельца (legacy)" htmlFor="prop-owner-phone">
             <input
+              id="prop-owner-phone"
               name="ownerPhone"
               required
               defaultValue={property?.ownerPhone}
@@ -449,13 +558,50 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
             />
           </Field>
         </div>
-      </section>
+      </Section>
 
-      <div className="flex flex-wrap gap-3">
+      <Section title="Описания">
+        <div className="space-y-4">
+          <Field label="Краткое описание" htmlFor="prop-short">
+            <input
+              id="prop-short"
+              name="shortDescription"
+              required
+              defaultValue={property?.shortDescription}
+              className={inputClassName}
+            />
+          </Field>
+          <Field label="Полное описание" htmlFor="prop-desc">
+            <textarea
+              id="prop-desc"
+              name="description"
+              required
+              rows={5}
+              defaultValue={property?.description}
+              className={inputClassName}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {!isEdit ? (
+        <p className="text-sm text-[var(--finance-text-secondary)]">
+          Фотографии можно добавить после создания объекта.
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-[var(--finance-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+        >
+          Отмена
+        </button>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+          className="rounded-xl bg-[var(--finance-blue)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {pending
             ? "Сохранение..."
@@ -463,14 +609,71 @@ export function PropertyForm({ property, owners = [] }: PropertyFormProps) {
               ? "Сохранить изменения"
               : "Создать объект"}
         </button>
-        <button
-          type="button"
-          onClick={() => router.push("/crm/properties")}
-          className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Отмена
-        </button>
       </div>
+
+      {isEdit && property ? (
+        <DangerZone property={property} />
+      ) : null}
     </form>
+  );
+}
+
+function DangerZone({ property }: { property: PropertyDTO }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    const confirmed = window.confirm(
+      `Удалить объект «${property.name}»? Это действие нельзя отменить.`,
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setPending(true);
+    try {
+      const response = await fetch(`/api/properties/${property.id}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Не удалось удалить объект");
+      }
+      router.push("/crm/properties");
+      router.refresh();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Не удалось удалить объект",
+      );
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <section className="finance-card mt-6 border-[var(--finance-red-light)] p-4 sm:p-5">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-[var(--finance-red)]">
+        Опасная зона
+      </h2>
+      <p className="mt-2 text-sm text-[var(--finance-text-secondary)]">
+        Удаление блокируется, если есть бронирования, каналы или карточка
+        долгосрочной аренды.
+      </p>
+      {error ? (
+        <p className="mt-3 rounded-lg bg-[var(--finance-red-light)] px-3 py-2 text-sm text-[var(--finance-red)]">
+          {error}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => void handleDelete()}
+        disabled={pending}
+        className="mt-4 rounded-xl border border-[var(--finance-red)]/30 px-4 py-2 text-sm font-medium text-[var(--finance-red)] hover:bg-[var(--finance-red-light)] disabled:opacity-50"
+      >
+        {pending ? "Удаление..." : "Удалить объект"}
+      </button>
+    </section>
   );
 }

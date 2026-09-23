@@ -59,7 +59,7 @@ export default async function BookingCardPage({
           metaLine: `Вместимость ${booking.property.guests} · в брони ${booking.guestsCount} гост.`,
         }}
         photos={propertyPhotos}
-        propertyHref={`/crm/properties/${booking.propertyId}/edit`}
+        propertyHref={`/crm/properties/${booking.propertyId}`}
       />
 
       <section className="rounded-xl border border-zinc-200 bg-white p-5">

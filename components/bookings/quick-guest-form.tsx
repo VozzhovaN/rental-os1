@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import type { GuestDTO } from "@/lib/guests";
 import { MESSENGER_TYPES } from "@/lib/validations/guest";
 
 const inputClassName =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none ring-zinc-900/10 focus:border-zinc-400 focus:ring-2";
+
+function subscribeNever() {
+  return () => {};
+}
 
 export function QuickGuestForm({
   onCreated,
@@ -17,20 +22,22 @@ export function QuickGuestForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [messengerType, setMessengerType] = useState("");
+  const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    event.stopPropagation();
     setError(null);
     setPending(true);
 
     const form = new FormData(event.currentTarget);
     const payload = {
       firstName: String(form.get("firstName") ?? "").trim(),
-      lastName: String(form.get("lastName") ?? "").trim(),
-      phone: String(form.get("phone") ?? "").trim(),
-      email: String(form.get("email") ?? "").trim(),
+      lastName: String(form.get("lastName") ?? "").trim() || null,
+      phone: String(form.get("phone") ?? "").trim() || null,
+      email: String(form.get("email") ?? "").trim() || null,
       messengerType: messengerType === "" ? null : messengerType,
-      messengerContact: String(form.get("messengerContact") ?? "").trim(),
+      messengerContact: String(form.get("messengerContact") ?? "").trim() || null,
     };
 
     try {
@@ -57,9 +64,13 @@ export function QuickGuestForm({
     }
   }
 
-  return (
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 p-4"
       onClick={onClose}
       role="presentation"
     >
@@ -129,6 +140,7 @@ export function QuickGuestForm({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }

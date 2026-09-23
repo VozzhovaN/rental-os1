@@ -76,6 +76,7 @@ model Property {
   owner              Owner?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   payoutAllocations  OwnerPayoutAllocation[]
   commissionPayments CommissionPayment[]
+  presentationItems  PresentationItem[]
 
   @@index([status])
   @@index([city])
@@ -358,6 +359,8 @@ model PropertyPhoto {
   property         Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   longTermUsages   LongTermListingPhoto[]
   saleUsages       SaleListingPhoto[]
+  presentationCovers PresentationItem[]   @relation("PresentationItemCover")
+  presentationUsages PresentationItemPhoto[]
 
   @@index([propertyId, sortOrder])
   @@index([propertyId, isCover])
@@ -1008,4 +1011,107 @@ model LongTermPaymentAllocation {
 
   @@unique([paymentId, chargeId])
   @@index([chargeId])
+}
+
+/// Client-facing property presentation / collection (Stage 12.6.4).
+/// Public access only via publicToken when status is READY or PUBLISHED.
+enum PresentationKind {
+  SHORT_TERM
+  LONG_TERM
+  SALE
+  COLLECTION
+}
+
+enum PresentationStatus {
+  DRAFT
+  READY
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PresentationSectionType {
+  DESCRIPTION
+  ADVANTAGES
+  INFRASTRUCTURE
+  AMENITIES
+  LOCATION
+  CONDITIONS
+  LAYOUT
+  COMMUNICATIONS
+  SECURITY
+  CUSTOM
+}
+
+model Presentation {
+  id           String              @id @default(cuid())
+  /// Cryptographically random public slug (>=128 bits). Never sequential.
+  publicToken  String              @unique
+  kind         PresentationKind
+  status       PresentationStatus  @default(DRAFT)
+  title        String
+  subtitle     String?
+  companyName  String?
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+  /// CRM-only note. Never exposed on public DTO / PDF.
+  internalNote String?
+  publishedAt  DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  items        PresentationItem[]
+
+  @@index([status])
+  @@index([kind])
+  @@index([createdAt])
+}
+
+model PresentationItem {
+  id                   String                   @id @default(cuid())
+  presentationId       String
+  propertyId           String
+  sortOrder            Int                      @default(0)
+  titleOverride        String?
+  /// Presentation-only price override in RUB. Null → resolve from Property / LT / Sale.
+  priceOverride        Int?
+  descriptionOverride  String?
+  /// Selected cover PropertyPhoto. Null → PropertyPhoto.isCover / first.
+  coverPhotoId         String?
+  /// Architectural placeholder. No video storage in this stage (PROPERTY_VIDEO_STORAGE_GAP).
+  videoUrl             String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  presentation         Presentation             @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  property             Property                 @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  coverPhoto           PropertyPhoto?           @relation("PresentationItemCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
+  photos               PresentationItemPhoto[]
+  sections             PresentationSection[]
+
+  @@index([presentationId, sortOrder])
+  @@index([propertyId])
+}
+
+model PresentationItemPhoto {
+  id                 String           @id @default(cuid())
+  presentationItemId String
+  propertyPhotoId    String
+  sortOrder          Int              @default(0)
+  presentationItem   PresentationItem @relation(fields: [presentationItemId], references: [id], onDelete: Cascade)
+  propertyPhoto      PropertyPhoto    @relation(fields: [propertyPhotoId], references: [id], onDelete: Cascade)
+
+  @@unique([presentationItemId, propertyPhotoId])
+  @@index([presentationItemId, sortOrder])
+}
+
+model PresentationSection {
+  id                 String                   @id @default(cuid())
+  presentationItemId String
+  type               PresentationSectionType
+  title              String
+  content            String                   @default("")
+  sortOrder          Int                      @default(0)
+  isVisible          Boolean                  @default(true)
+  presentationItem   PresentationItem         @relation(fields: [presentationItemId], references: [id], onDelete: Cascade)
+
+  @@index([presentationItemId, sortOrder])
 }

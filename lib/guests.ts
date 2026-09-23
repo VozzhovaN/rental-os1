@@ -1,5 +1,13 @@
 import { type Guest, type MessengerType } from "@prisma/client";
 import { prismaGuestSearchWhere } from "@/lib/guest-search";
+import {
+  deriveGuestUiStatus,
+  isActiveStay,
+  isFutureBooking,
+  pickLastStay,
+  pickNextBooking,
+  type GuestUiStatus,
+} from "@/lib/guest-status";
 import { prisma } from "@/lib/prisma";
 import type { CreateGuestInput, UpdateGuestInput } from "@/lib/validations/guest";
 
@@ -18,15 +26,22 @@ export type GuestDTO = Omit<Guest, "createdAt" | "updatedAt"> & {
   updatedAt: string;
 };
 
+export type GuestBookingSummary = {
+  id: string;
+  checkIn: string;
+  checkOut: string;
+  propertyName: string;
+  status: string;
+};
+
 export type GuestListItemDTO = GuestDTO & {
   bookingsCount: number;
-  lastBooking: {
-    id: string;
-    checkIn: string;
-    checkOut: string;
-    propertyName: string;
-    status: string;
-  } | null;
+  lastBooking: GuestBookingSummary | null;
+  nextBooking: GuestBookingSummary | null;
+  uiStatus: GuestUiStatus;
+  isRepeat: boolean;
+  hasActiveStay: boolean;
+  hasFutureBooking: boolean;
 };
 
 export function serializeGuest(guest: Guest): GuestDTO {
@@ -45,8 +60,13 @@ export async function getGuests(filters: { q?: string } = {}) {
       _count: { select: { bookings: true } },
       bookings: {
         orderBy: { checkIn: "desc" },
-        take: 1,
-        include: { property: { select: { name: true } } },
+        select: {
+          id: true,
+          checkIn: true,
+          checkOut: true,
+          status: true,
+          property: { select: { name: true } },
+        },
       },
     },
   });
@@ -55,20 +75,28 @@ export async function getGuests(filters: { q?: string } = {}) {
 export function serializeGuestListItem(
   guest: Awaited<ReturnType<typeof getGuests>>[number],
 ): GuestListItemDTO {
-  const last = guest.bookings[0] ?? null;
+  const mapBooking = (
+    booking: (typeof guest.bookings)[number],
+  ): GuestBookingSummary => ({
+    id: booking.id,
+    checkIn: booking.checkIn.toISOString(),
+    checkOut: booking.checkOut.toISOString(),
+    propertyName: booking.property.name,
+    status: booking.status,
+  });
+
+  const last = pickLastStay(guest.bookings);
+  const next = pickNextBooking(guest.bookings);
 
   return {
     ...serializeGuest(guest),
     bookingsCount: guest._count.bookings,
-    lastBooking: last
-      ? {
-          id: last.id,
-          checkIn: last.checkIn.toISOString(),
-          checkOut: last.checkOut.toISOString(),
-          propertyName: last.property.name,
-          status: last.status,
-        }
-      : null,
+    lastBooking: last ? mapBooking(last) : null,
+    nextBooking: next ? mapBooking(next) : null,
+    uiStatus: deriveGuestUiStatus(guest.bookings),
+    isRepeat: guest._count.bookings > 1,
+    hasActiveStay: guest.bookings.some((b) => isActiveStay(b)),
+    hasFutureBooking: guest.bookings.some((b) => isFutureBooking(b)),
   };
 }
 
@@ -160,6 +188,16 @@ export async function deleteGuest(id: string) {
 
   if (bookingsCount > 0) {
     throw new GuestError("Нельзя удалить гостя с бронированиями", "CONFLICT");
+  }
+
+  const contracts = await prisma.longTermContract.count({
+    where: { guestId: id },
+  });
+  if (contracts > 0) {
+    throw new GuestError(
+      "Нельзя удалить гостя с долгосрочными договорами",
+      "CONFLICT",
+    );
   }
 
   await prisma.guest.delete({

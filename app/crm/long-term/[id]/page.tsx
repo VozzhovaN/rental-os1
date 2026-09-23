@@ -97,7 +97,7 @@ export default async function LongTermCardPage({
           address: card.property.address,
         }}
         photos={propertyPhotos}
-        propertyHref={`/crm/properties/${card.property.id}/edit`}
+        propertyHref={`/crm/properties/${card.property.id}`}
       />
 
       <PublicationReadinessBlock readiness={readiness} />

@@ -113,7 +113,7 @@ export default async function SalePropertyCardPage({
           address: card.property.address,
         }}
         photos={propertyPhotos}
-        propertyHref={`/crm/properties/${card.property.id}/edit`}
+        propertyHref={`/crm/properties/${card.property.id}`}
       />
 
       <Block title="Продажа">

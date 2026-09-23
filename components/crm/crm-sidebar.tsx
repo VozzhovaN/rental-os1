@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   IconBuilding,
   IconCalendar,
+  IconFolder,
   IconHouse,
   IconKey,
   IconLayout,
@@ -26,6 +27,12 @@ const MAIN_NAV = [
     match: "prefix" as const,
   },
   { href: "/crm/sales/properties", label: "Продажи", icon: IconTag, match: "sales" as const },
+  {
+    href: "/crm/presentations",
+    label: "Презентации",
+    icon: IconFolder,
+    match: "prefix" as const,
+  },
   { href: "/crm/finance", label: "Финансы", icon: IconWallet, match: "finance" as const },
 ] as const;
 

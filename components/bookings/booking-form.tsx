@@ -176,6 +176,7 @@ export function BookingForm({
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6">
       {error ? (
         <p className="whitespace-pre-line rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
@@ -345,17 +346,19 @@ export function BookingForm({
           Отмена
         </Link>
       </div>
-
-      {creatingGuest ? (
-        <QuickGuestForm
-          onClose={() => setCreatingGuest(false)}
-          onCreated={(guest) => {
-            setGuests((current) => [guest, ...current.filter((item) => item.id !== guest.id)]);
-            setGuestId(guest.id);
-            setCreatingGuest(false);
-          }}
-        />
-      ) : null}
     </form>
+
+    {creatingGuest ? (
+      <QuickGuestForm
+        onClose={() => setCreatingGuest(false)}
+        onCreated={(guest) => {
+          setGuests((current) => [guest, ...current.filter((item) => item.id !== guest.id)]);
+          setGuestId(guest.id);
+          setCreatingGuest(false);
+          setError(null);
+        }}
+      />
+    ) : null}
+    </>
   );
 }

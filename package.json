@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test --test-concurrency=1 tests/integrations/crypto.test.ts tests/integrations/http.test.ts tests/integrations/adapter.test.ts tests/integrations/sync.test.ts tests/integrations/avito-listing.test.ts tests/integrations/long-term.test.ts tests/integrations/long-term-finance.test.ts tests/integrations/property-economics.test.ts tests/integrations/finance-dashboard.test.ts tests/integrations/owner-settlements.test.ts tests/integrations/sale-listing.test.ts tests/integrations/buyer.test.ts tests/integrations/viewing-deposit.test.ts tests/integrations/purchase-history.test.ts tests/integrations/sale-publication.test.ts tests/integrations/cian-sale.test.ts tests/integrations/sale-provider-readiness.test.ts tests/integrations/auth.test.ts tests/integrations/auth-hardening.test.ts tests/integrations/security-hardening.test.ts tests/integrations/finance.test.ts tests/integrations/booking-finance.test.ts tests/integrations/booking.test.ts tests/integrations/property.test.ts tests/integrations/property-photos.test.ts tests/integrations/dashboard.test.ts tests/integrations/publication.test.ts tests/integrations/publication-readiness.test.ts tests/integrations/cian-serializer.test.ts tests/integrations/cian-preview.test.ts tests/integrations/cian-integration.test.ts",
+    "test": "tsx --test --test-concurrency=1 tests/integrations/crypto.test.ts tests/integrations/http.test.ts tests/integrations/adapter.test.ts tests/integrations/sync.test.ts tests/integrations/avito-listing.test.ts tests/integrations/long-term.test.ts tests/integrations/long-term-finance.test.ts tests/integrations/property-economics.test.ts tests/integrations/finance-dashboard.test.ts tests/integrations/owner-settlements.test.ts tests/integrations/sale-listing.test.ts tests/integrations/buyer.test.ts tests/integrations/viewing-deposit.test.ts tests/integrations/purchase-history.test.ts tests/integrations/sale-publication.test.ts tests/integrations/cian-sale.test.ts tests/integrations/sale-provider-readiness.test.ts tests/integrations/auth.test.ts tests/integrations/auth-hardening.test.ts tests/integrations/security-hardening.test.ts tests/integrations/finance.test.ts tests/integrations/booking-finance.test.ts tests/integrations/booking.test.ts tests/integrations/property.test.ts tests/integrations/property-photos.test.ts tests/integrations/dashboard.test.ts tests/integrations/publication.test.ts tests/integrations/publication-readiness.test.ts tests/integrations/cian-serializer.test.ts tests/integrations/cian-preview.test.ts tests/integrations/cian-integration.test.ts tests/integrations/presentation.test.ts",
     "prisma:seed": "prisma db seed"
   },
   "prisma": {
@@ -17,6 +17,7 @@
     "@prisma/client": "^6.19.3",
     "argon2": "^0.45.1",
     "next": "16.3.4",
+    "pdfkit": "^0.20.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "^0.35.4",
@@ -26,6 +27,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/argon2": "^0.14.1",
     "@types/node": "^20",
+    "@types/pdfkit": "^0.17.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/sharp": "^0.31.1",

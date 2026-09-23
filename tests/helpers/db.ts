@@ -42,6 +42,10 @@ export async function prepareTestDatabase() {
 export async function resetFixtures() {
   await prisma.publication.deleteMany();
   await prisma.salePublication.deleteMany();
+  await prisma.presentationSection.deleteMany();
+  await prisma.presentationItemPhoto.deleteMany();
+  await prisma.presentationItem.deleteMany();
+  await prisma.presentation.deleteMany();
   await prisma.financialTransaction.deleteMany();
   await prisma.commissionPayment.deleteMany();
   await prisma.longTermPaymentAllocation.deleteMany();

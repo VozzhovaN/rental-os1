@@ -12,17 +12,21 @@ export default async function NewPropertyPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-5">
       <div>
         <Link
           href="/crm/properties"
-          className="text-sm text-zinc-500 hover:text-zinc-800"
+          className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
         >
           ← К списку объектов
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--finance-text)]">
           Новый объект
         </h1>
+        <p className="mt-1 text-sm text-[var(--finance-text-secondary)]">
+          Короткий flow: основное, адрес, характеристики, управление.
+          Фото — после создания.
+        </p>
       </div>
       <PropertyForm owners={owners} />
     </div>

@@ -205,6 +205,18 @@ export const API_ROUTE_REGISTRY: readonly RegisteredApiRoute[] = [
   { routeFile: "viewings/[id]/cancel/route.ts", pathPattern: "/api/viewings/[id]/cancel", access: ROUTE_ACCESS.AUTH_REQUIRED },
   { routeFile: "viewings/[id]/complete/route.ts", pathPattern: "/api/viewings/[id]/complete", access: ROUTE_ACCESS.AUTH_REQUIRED },
   { routeFile: "viewings/[id]/no-show/route.ts", pathPattern: "/api/viewings/[id]/no-show", access: ROUTE_ACCESS.AUTH_REQUIRED },
+
+  { routeFile: "presentations/route.ts", pathPattern: "/api/presentations", access: ROUTE_ACCESS.AUTH_REQUIRED },
+  { routeFile: "presentations/[id]/route.ts", pathPattern: "/api/presentations/[id]", access: ROUTE_ACCESS.AUTH_REQUIRED },
+  { routeFile: "presentations/[id]/pdf/route.ts", pathPattern: "/api/presentations/[id]/pdf", access: ROUTE_ACCESS.AUTH_REQUIRED },
+
+  { routeFile: "p/[token]/route.ts", pathPattern: "/api/p/[token]", access: ROUTE_ACCESS.PUBLIC },
+  { routeFile: "p/[token]/pdf/route.ts", pathPattern: "/api/p/[token]/pdf", access: ROUTE_ACCESS.PUBLIC },
+  {
+    routeFile: "p/[token]/photos/[photoId]/route.ts",
+    pathPattern: "/api/p/[token]/photos/[photoId]",
+    access: ROUTE_ACCESS.PUBLIC,
+  },
 ] as const;
 
 export const EXTERNAL_CALLBACK_AUTH = "BLOCKED_BY_PROVIDER_CONFIRMATION" as const;

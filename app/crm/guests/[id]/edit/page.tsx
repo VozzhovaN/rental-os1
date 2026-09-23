@@ -18,12 +18,17 @@ export default async function EditGuestPage({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5">
       <div>
-        <Link href={`/crm/guests/${guest.id}`} className="text-sm text-zinc-500 hover:text-zinc-800">
+        <Link
+          href={`/crm/guests/${guest.id}`}
+          className="text-sm text-[var(--finance-text-secondary)] hover:text-[var(--finance-text)]"
+        >
           ← К карточке гостя
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Редактирование гостя</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--finance-text)]">
+          Редактирование гостя
+        </h1>
       </div>
       <GuestForm guest={serializeGuest(guest)} />
     </div>

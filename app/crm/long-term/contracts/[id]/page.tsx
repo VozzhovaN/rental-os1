@@ -64,7 +64,7 @@ export default async function LongTermContractPage({
             address: property.address,
           }}
           photos={propertyPhotos}
-          propertyHref={`/crm/properties/${property.id}/edit`}
+          propertyHref={`/crm/properties/${property.id}`}
         />
       ) : (
         <section className="rounded-xl border border-zinc-200 bg-white p-5 text-sm">
