@@ -8,10 +8,11 @@ import { useRouter } from "next/navigation";
 type Props = {
   email: string;
   name: string | null;
+  demoMode?: boolean;
   children: ReactNode;
 };
 
-export function CrmShell({ email, name, children }: Props) {
+export function CrmShell({ email, name, demoMode = false, children }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const router = useRouter();
@@ -49,6 +50,15 @@ export function CrmShell({ email, name, children }: Props) {
           >
             <IconMenu size={20} />
           </button>
+
+          {demoMode ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--finance-border)] bg-[var(--finance-blue-light)] px-2.5 py-1 text-[11px] font-semibold text-[var(--finance-blue)]"
+              title="Демонстрационная версия — данные искусственные"
+            >
+              Rental OS · DEMO
+            </span>
+          ) : null}
 
           <div className="ml-auto flex items-center gap-3">
             <div className="relative">

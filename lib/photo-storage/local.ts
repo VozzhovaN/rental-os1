@@ -3,7 +3,15 @@ import { access, mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import type { PhotoStorage, SavedPhotoObject } from "@/lib/photo-storage/types";
 
-const STORAGE_ROOT = path.join(process.cwd(), "storage");
+/**
+ * Storage root for uploaded photo bytes.
+ * Configurable via PHOTO_STORAGE_ROOT so deployments (e.g. a course demo on a
+ * persistent volume) can point uploads at durable storage. Local dev falls back
+ * to <cwd>/storage. Domain logic never hardcodes a platform-specific path.
+ */
+const STORAGE_ROOT = process.env.PHOTO_STORAGE_ROOT?.trim()
+  ? path.resolve(process.env.PHOTO_STORAGE_ROOT.trim())
+  : path.join(process.cwd(), "storage");
 
 function assertSafePropertyId(propertyId: string) {
   if (!/^[a-zA-Z0-9_-]+$/.test(propertyId)) {
