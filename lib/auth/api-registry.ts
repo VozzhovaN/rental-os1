@@ -19,6 +19,8 @@ export const API_ROUTE_REGISTRY: readonly RegisteredApiRoute[] = [
   { routeFile: "auth/logout/route.ts", pathPattern: "/api/auth/logout", access: "AUTH_OPTIONAL" },
   { routeFile: "auth/me/route.ts", pathPattern: "/api/auth/me", access: ROUTE_ACCESS.AUTH_REQUIRED },
 
+  { routeFile: "health/route.ts", pathPattern: "/api/health", access: ROUTE_ACCESS.PUBLIC },
+
   { routeFile: "feeds/cian/long-term.xml/route.ts", pathPattern: "/api/feeds/cian/long-term.xml", access: ROUTE_ACCESS.PUBLIC },
   { routeFile: "feeds/cian/sale.xml/route.ts", pathPattern: "/api/feeds/cian/sale.xml", access: ROUTE_ACCESS.PUBLIC },
 

@@ -209,7 +209,90 @@ describe("bookings", () => {
     assert.deepEqual(getAllowedBookingStatuses("COMPLETED"), ["COMPLETED"]);
     assert.deepEqual(getAllowedBookingStatuses("CANCELLED"), ["CANCELLED"]);
     assert.ok(getAllowedBookingStatuses("PENDING").includes("CONFIRMED"));
+    assert.ok(!getAllowedBookingStatuses("PENDING").includes("COMPLETED"));
     assert.ok(getAllowedBookingStatuses("CONFIRMED").includes("CANCELLED"));
     assert.ok(!getAllowedBookingStatuses("CONFIRMED").includes("PENDING"));
+  });
+
+  it("COMPLETED освобождает даты для новой брони", async () => {
+    const { channel, property } = await resetFixtures();
+    const guest = await createGuest();
+    const created = await createBooking({
+      propertyId: property.id,
+      guestId: guest.id,
+      salesChannelId: channel.id,
+      checkIn: "2026-08-01",
+      checkOut: "2026-08-10",
+      guestsCount: 1,
+      totalAmount: 9000,
+      status: "PENDING",
+    });
+    await checkInBooking(created.id);
+    await checkOutBooking(created.id);
+    const completed = await prisma.booking.findUniqueOrThrow({ where: { id: created.id } });
+    assert.equal(completed.status, "COMPLETED");
+
+    const replacement = await createBooking({
+      propertyId: property.id,
+      guestId: guest.id,
+      salesChannelId: channel.id,
+      checkIn: "2026-08-05",
+      checkOut: "2026-08-12",
+      guestsCount: 1,
+      totalAmount: 7000,
+    });
+    assert.equal(replacement.status, "PENDING");
+  });
+
+  it("check-out запрещён из PENDING (нужен check-in → CONFIRMED)", async () => {
+    const { channel, property } = await resetFixtures();
+    const guest = await createGuest();
+    const created = await createBooking({
+      propertyId: property.id,
+      guestId: guest.id,
+      salesChannelId: channel.id,
+      checkIn: "2026-07-01",
+      checkOut: "2026-07-03",
+      guestsCount: 1,
+      totalAmount: 2000,
+    });
+    assert.equal(created.status, "PENDING");
+    await assert.rejects(
+      () => checkOutBooking(created.id),
+      (error: unknown) => error instanceof BookingError && error.code === "VALIDATION",
+    );
+    await assert.rejects(
+      () => updateBooking(created.id, { status: "COMPLETED" }),
+      (error: unknown) => error instanceof BookingError && error.code === "VALIDATION",
+    );
+  });
+
+  it("перенос брони на другого гостя пишет историю обоим", async () => {
+    const { channel, property } = await resetFixtures();
+    const guestA = await createGuest();
+    const guestB = await prisma.guest.create({
+      data: { firstName: "Борис", phone: "+70000000001" },
+    });
+    const created = await createBooking({
+      propertyId: property.id,
+      guestId: guestA.id,
+      salesChannelId: channel.id,
+      checkIn: "2026-06-01",
+      checkOut: "2026-06-03",
+      guestsCount: 1,
+      totalAmount: 3000,
+    });
+    await updateBooking(created.id, { guestId: guestB.id });
+
+    const historyA = await prisma.guestHistory.findMany({
+      where: { guestId: guestA.id },
+      orderBy: { createdAt: "asc" },
+    });
+    const historyB = await prisma.guestHistory.findMany({
+      where: { guestId: guestB.id },
+      orderBy: { createdAt: "asc" },
+    });
+    assert.ok(historyA.some((h) => h.title.includes("перенесено")));
+    assert.ok(historyB.some((h) => h.type === "BOOKING_UPDATED"));
   });
 });

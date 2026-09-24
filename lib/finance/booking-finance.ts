@@ -319,6 +319,12 @@ export async function recordBookingPayment(
   if (!booking) {
     throw new FinanceDomainError("NOT_FOUND", "Бронирование не найдено");
   }
+  if (booking.status === "CANCELLED") {
+    throw new FinanceDomainError(
+      "VALIDATION",
+      "Нельзя принять оплату по отменённому бронированию",
+    );
+  }
 
   await ensureCommissionSnapshot(bookingId);
 

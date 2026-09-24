@@ -78,22 +78,25 @@ export function connectionTokens(connection: {
   };
 }
 
-export function serializeConnectionPublic(connection: {
-  status: IntegrationStatus;
-  providerAccountId: string | null;
-  accessToken?: string | null;
-  lastSyncAt: Date | null;
-  lastSuccessAt: Date | null;
-  lastErrorAt: Date | null;
-  lastError: string | null;
-} | null) {
+export function serializeConnectionPublic(
+  connection: {
+    status: IntegrationStatus;
+    providerAccountId: string | null;
+    /** Encrypted column presence only — never returned in the DTO. */
+    accessToken?: string | null;
+    lastSyncAt: Date | null;
+    lastSuccessAt: Date | null;
+    lastErrorAt: Date | null;
+    lastError: string | null;
+  } | null,
+) {
   const status = connection?.status ?? "DISCONNECTED";
   const hasToken = Boolean(connection?.accessToken);
   const connected =
     (status === "CONNECTED" || status === "SYNCING") && (hasToken || isMockAvito());
 
   return {
-    provider: "AVITO",
+    provider: "AVITO" as const,
     status,
     accountId: connection?.providerAccountId ?? null,
     lastSyncAt: connection?.lastSyncAt?.toISOString() ?? null,

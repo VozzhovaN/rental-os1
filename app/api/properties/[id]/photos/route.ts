@@ -3,6 +3,7 @@ import { getPropertyByIdOrSlug } from "@/lib/properties";
 import {
   createPropertyPhoto,
   getPropertyPhotos,
+  MAX_PHOTOS_PER_UPLOAD,
   PropertyPhotoError,
   serializePropertyPhoto,
   uploadPropertyPhotoFile,
@@ -62,6 +63,15 @@ export const POST = withApiAuth(async (
 
       if (files.length === 0) {
         return NextResponse.json({ error: "Выберите файл изображения" }, { status: 400 });
+      }
+
+      if (files.length > MAX_PHOTOS_PER_UPLOAD) {
+        return NextResponse.json(
+          {
+            error: `За один раз можно загрузить не более ${MAX_PHOTOS_PER_UPLOAD} фотографий.`,
+          },
+          { status: 400 },
+        );
       }
 
       const captionRaw = form.get("caption");

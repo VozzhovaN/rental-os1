@@ -7,6 +7,7 @@ import { normalizeEmail, verifyPassword } from "@/lib/auth/password";
 import { checkLoginRateLimit, clearLoginFailures, recordLoginFailure } from "@/lib/auth/rate-limit";
 import { createSession, revokeSessionByRawToken } from "@/lib/auth/session";
 import { loginSchema } from "@/lib/auth/validation";
+import { withPublicRoute } from "@/lib/auth/with-public-route";
 import { prisma } from "@/lib/prisma";
 
 const GENERIC_INVALID = "Неверный email или пароль";
@@ -19,7 +20,7 @@ function clientIp(request: Request): string {
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
-export async function POST(request: Request) {
+export const POST = withPublicRoute(async (request: Request) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -87,4 +88,4 @@ export async function POST(request: Request) {
   response.headers.set("Cache-Control", "no-store");
   setSessionCookie(response, rawToken);
   return response;
-}
+});

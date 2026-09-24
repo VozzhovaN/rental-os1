@@ -108,7 +108,7 @@ export function BookingDetailView({
 
   const canConfirm = booking.status === "PENDING";
   const canCheckIn = booking.status === "PENDING";
-  const canCheckOut = booking.status === "PENDING" || booking.status === "CONFIRMED";
+  const canCheckOut = booking.status === "CONFIRMED";
   const canCancel = booking.status === "PENDING" || booking.status === "CONFIRMED";
 
   return (
@@ -371,7 +371,11 @@ export function BookingDetailView({
         </section>
       ) : null}
 
-      <BookingFinancePanel bookingId={booking.id} initialFinance={finance} />
+      <BookingFinancePanel
+        bookingId={booking.id}
+        bookingStatus={booking.status}
+        initialFinance={finance}
+      />
 
       <section className="finance-card space-y-4 p-5">
         <h2 className="text-base font-semibold">История</h2>

@@ -15,10 +15,11 @@ import { getPropertyByIdOrSlug } from "@/lib/properties";
 import { getSalesChannelById } from "@/lib/sales-channels";
 import type { CreateBookingInput, UpdateBookingInput } from "@/lib/validations/guest";
 
-const OCCUPYING_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED", "COMPLETED"];
+/** Occupancy for new bookings: finished stays (COMPLETED) free the calendar. */
+const OCCUPYING_STATUSES: BookingStatus[] = ["PENDING", "CONFIRMED"];
 
 const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
-  PENDING: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"],
+  PENDING: ["PENDING", "CONFIRMED", "CANCELLED"],
   CONFIRMED: ["CONFIRMED", "COMPLETED", "CANCELLED"],
   COMPLETED: ["COMPLETED"],
   CANCELLED: ["CANCELLED"],
@@ -544,6 +545,15 @@ export async function updateBooking(id: string, input: UpdateBookingInput) {
     ? "BOOKING_CANCELLED"
     : "BOOKING_UPDATED";
 
+  if (guest.id !== current.guestId) {
+    await createGuestHistory({
+      guestId: current.guestId,
+      type: "BOOKING_UPDATED",
+      title: "Бронирование перенесено на другого гостя",
+      description: `${property.name}, ${toDateInput(nextCheckIn)} — ${toDateInput(nextCheckOut)}`,
+    });
+  }
+
   await createGuestHistory({
     guestId: guest.id,
     type: historyType,
@@ -686,8 +696,11 @@ export async function checkOutBooking(id: string) {
     return current;
   }
 
-  if (current.status !== "PENDING" && current.status !== "CONFIRMED") {
-    throw new BookingError("Выселить можно только активное бронирование", "VALIDATION");
+  if (current.status !== "CONFIRMED") {
+    throw new BookingError(
+      "Выселить можно только подтверждённое (заселённое) бронирование",
+      "VALIDATION",
+    );
   }
 
   const booking = await prisma.booking.update({

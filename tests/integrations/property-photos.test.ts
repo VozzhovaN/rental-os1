@@ -109,6 +109,25 @@ describe("property photo storage", () => {
     assert.equal(payload.photos.length, 2);
   });
 
+  it("rejects multipart upload exceeding per-request file limit (DoS bound)", async () => {
+    const { property } = await resetFixtures();
+    const { cookie } = await createTestSessionCookie();
+    const form = new FormData();
+    for (let i = 0; i < 11; i++) {
+      form.append("files", await makeImageFile("jpeg", `bulk-${i}.jpg`));
+    }
+    const response = await postPhotos(
+      authedRequest(`http://localhost/api/properties/${property.id}/photos`, cookie, {
+        method: "POST",
+        body: form,
+      }),
+      { params: Promise.resolve({ id: property.id }) },
+    );
+    assert.equal(response.status, 400);
+    const stored = await prisma.propertyPhoto.count({ where: { propertyId: property.id } });
+    assert.equal(stored, 0);
+  });
+
   it("rejects invalid MIME, fake extension, oversized, path traversal keys", async () => {
     await assert.rejects(
       () => processPropertyPhotoUpload(Buffer.from("%PDF-1.4 fake"), "application/pdf"),

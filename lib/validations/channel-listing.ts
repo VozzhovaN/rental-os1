@@ -12,17 +12,21 @@ const optionalUrl = z
     "Укажите корректный URL",
   );
 
-export const createChannelListingSchema = z.object({
-  salesChannelId: z.string().trim().min(1, "Укажите канал продаж"),
-  externalId: z.string().trim().min(1, "Укажите ID объявления"),
-  externalUrl: optionalUrl,
-});
+export const createChannelListingSchema = z
+  .object({
+    salesChannelId: z.string().trim().min(1, "Укажите канал продаж"),
+    externalId: z.string().trim().min(1, "Укажите ID объявления"),
+    externalUrl: optionalUrl,
+  })
+  .strict();
 
-export const updateChannelListingSchema = z.object({
-  externalId: z.string().trim().min(1, "Укажите ID объявления").optional(),
-  externalUrl: optionalUrl,
-  status: z.enum(LISTING_STATUSES).optional(),
-});
+export const updateChannelListingSchema = z
+  .object({
+    externalId: z.string().trim().min(1, "Укажите ID объявления").optional(),
+    externalUrl: optionalUrl,
+    status: z.enum(LISTING_STATUSES).optional(),
+  })
+  .strict();
 
 export type CreateChannelListingInput = z.infer<typeof createChannelListingSchema>;
 export type UpdateChannelListingInput = z.infer<typeof updateChannelListingSchema>;

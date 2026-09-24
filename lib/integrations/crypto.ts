@@ -42,6 +42,11 @@ export function decryptSecret(value: string | null | undefined) {
   }
 
   if (!value.startsWith(PREFIX)) {
+    // Fail closed in production: a value without the versioned prefix means an
+    // unencrypted/legacy blob that must never be treated as a valid secret.
+    if (process.env.NODE_ENV === "production") {
+      return null;
+    }
     return value;
   }
 

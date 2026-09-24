@@ -38,7 +38,12 @@ export function assertTrustedOrigin(request: Request): OriginCheckResult {
   const configured = (() => {
     try {
       return getAppOrigin()?.toLowerCase() ?? null;
-    } catch {
+    } catch (error) {
+      // In production APP_ORIGIN is mandatory; never silently fall back to the
+      // spoofable Host header. Re-throw so the misconfiguration fails closed.
+      if (process.env.NODE_ENV === "production") {
+        throw error;
+      }
       return null;
     }
   })();

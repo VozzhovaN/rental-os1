@@ -68,7 +68,7 @@ export function BookingActions({
             {pending === "check-in" ? "Сохранение..." : "Заселить"}
           </button>
         ) : null}
-        {status === "PENDING" || status === "CONFIRMED" ? (
+        {status === "CONFIRMED" ? (
           <button
             type="button"
             disabled={Boolean(pending)}

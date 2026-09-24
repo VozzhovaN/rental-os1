@@ -20,6 +20,11 @@ export class PropertyPhotoError extends Error {
 
 export { PropertyPhotoValidationError };
 
+/** Max photos retained per property (storage / DoS bound). */
+export const MAX_PHOTOS_PER_PROPERTY = 60;
+/** Max files accepted in a single multipart upload request (CPU / DoS bound). */
+export const MAX_PHOTOS_PER_UPLOAD = 10;
+
 function fileUrl(propertyId: string, photoId: string) {
   return `/api/properties/${propertyId}/photos/${photoId}/file`;
 }
@@ -84,6 +89,16 @@ export async function uploadPropertyPhotoFile(
   const property = await getPropertyByIdOrSlug(propertyId);
   if (!property) {
     throw new PropertyPhotoError("Объект не найден", "NOT_FOUND");
+  }
+
+  const existingCount = await prisma.propertyPhoto.count({
+    where: { propertyId: property.id },
+  });
+  if (existingCount >= MAX_PHOTOS_PER_PROPERTY) {
+    throw new PropertyPhotoError(
+      `Достигнут лимит фотографий на объект (${MAX_PHOTOS_PER_PROPERTY}).`,
+      "VALIDATION",
+    );
   }
 
   const raw = Buffer.from(await file.arrayBuffer());

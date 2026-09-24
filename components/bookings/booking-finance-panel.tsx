@@ -12,10 +12,15 @@ import {
 
 type Props = {
   bookingId: string;
+  bookingStatus: string;
   initialFinance: BookingFinanceState;
 };
 
-export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
+export function BookingFinancePanel({
+  bookingId,
+  bookingStatus,
+  initialFinance,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +45,7 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
     refundedAmount: f.refundedAmount,
     netPaidAmount: f.netPaidAmount,
   });
+  const canAddPayment = bookingStatus !== "CANCELLED";
   const refundTarget = f.payments.find((p) => p.id === refundFor);
 
   async function submitPayment(event: FormEvent) {
@@ -123,13 +129,15 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
             {bookingPaymentUiLabels[payState]}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowPaymentForm((v) => !v)}
-          className="rounded-xl bg-[var(--finance-blue)] px-3 py-2 text-sm font-medium text-white"
-        >
-          + Добавить оплату
-        </button>
+        {canAddPayment ? (
+          <button
+            type="button"
+            onClick={() => setShowPaymentForm((v) => !v)}
+            className="rounded-xl bg-[var(--finance-blue)] px-3 py-2 text-sm font-medium text-white"
+          >
+            + Добавить оплату
+          </button>
+        ) : null}
       </div>
 
       <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -148,7 +156,7 @@ export function BookingFinancePanel({ bookingId, initialFinance }: Props) {
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      {showPaymentForm ? (
+      {showPaymentForm && canAddPayment ? (
         <form
           onSubmit={submitPayment}
           className="grid gap-3 rounded-xl border border-[var(--finance-border)] bg-[#F8FAFC] p-4 sm:grid-cols-2"

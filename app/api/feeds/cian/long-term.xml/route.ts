@@ -1,4 +1,5 @@
 import { buildPublicCianLongTermFeed } from "@/lib/publications/providers/cian";
+import { withPublicRoute } from "@/lib/auth/with-public-route";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
  * One feed per CIAN account; listings included via Publication inclusion statuses.
  * No credentials in URL. No CRM diagnostics. No arbitrary ids.
  */
-export async function GET() {
+export const GET = withPublicRoute(async () => {
   const feed = await buildPublicCianLongTermFeed();
 
   return new Response(feed.xml, {
@@ -17,4 +18,4 @@ export async function GET() {
       "Cache-Control": "no-store",
     },
   });
-}
+});

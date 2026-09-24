@@ -317,6 +317,35 @@ describe("booking finance (stage 12.2)", () => {
     assert.equal(txs[0].amount, 8000);
   });
 
+  it("нельзя принять новую оплату по CANCELLED бронированию", async () => {
+    const { channel } = await resetFixtures();
+    const property = await createCommissionProperty(channel.id, 20);
+    const booking = await createBooking({
+      propertyId: property.id,
+      channelId: channel.id,
+      totalAmount: 5000,
+    });
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: "CANCELLED" },
+    });
+    await assert.rejects(
+      () =>
+        recordBookingPayment(booking.id, {
+          amount: 1000,
+          paidAt: new Date("2026-09-02T12:00:00.000Z"),
+          method: null,
+          note: null,
+        }),
+      (error: unknown) =>
+        error instanceof FinanceDomainError && error.code === "VALIDATION",
+    );
+    assert.equal(
+      await prisma.bookingPayment.count({ where: { bookingId: booking.id } }),
+      0,
+    );
+  });
+
   it("unauthenticated booking finance API → 401; routes AUTH_REQUIRED; no-store", async () => {
     const { channel } = await resetFixtures();
     const property = await createCommissionProperty(channel.id, 20);

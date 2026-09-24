@@ -5,11 +5,12 @@ import {
 } from "@/lib/presentations";
 import { toPublicPresentationDTO } from "@/lib/presentation-public";
 import { buildPresentationPdf } from "@/lib/presentation-pdf";
+import { withPublicRoute } from "@/lib/auth/with-public-route";
 
-export async function GET(
+export const GET = withPublicRoute(async (
   _request: Request,
   context: { params: Promise<{ token: string }> },
-) {
+) => {
   const { token } = await context.params;
   if (!token || token.length < 16) {
     return NextResponse.json({ error: "Не найдено" }, { status: 404 });
@@ -42,4 +43,4 @@ export async function GET(
       "Cache-Control": "no-store",
     },
   });
-}
+});

@@ -207,7 +207,7 @@ function RowMenu({ booking }: { booking: BookingListItemDTO }) {
 
   const canConfirm = booking.status === "PENDING";
   const canCheckIn = booking.status === "PENDING";
-  const canCheckOut = booking.status === "PENDING" || booking.status === "CONFIRMED";
+  const canCheckOut = booking.status === "CONFIRMED";
   const canCancel = booking.status === "PENDING" || booking.status === "CONFIRMED";
 
   return (
