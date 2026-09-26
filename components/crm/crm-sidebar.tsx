@@ -90,16 +90,16 @@ export function CrmSidebar({ mobileOpen = false, onClose }: Props) {
     <aside
       className={`finance-sidebar flex h-full ${SIDEBAR_WIDTH} flex-col border-r border-[var(--finance-sidebar-border)] bg-white`}
     >
-      <div className="flex h-14 items-center gap-2.5 px-3.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E9FAF4] text-[var(--finance-green)]">
-          <IconHouse size={18} />
+      <div className="flex h-11 items-center gap-2 px-3">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E9FAF4] text-[var(--finance-green)]">
+          <IconHouse size={16} />
         </span>
-        <span className="text-[18px] font-bold tracking-tight text-[var(--finance-text)]">
+        <span className="text-[16px] font-bold tracking-tight text-[var(--finance-text)]">
           Rental OS
         </span>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 pb-4 pt-1" aria-label="CRM">
+      <nav className="flex-1 overflow-y-auto px-2 pb-3 pt-0.5" aria-label="CRM">
         <ul className="space-y-0.5">
           {MAIN_NAV.map((item) => {
             // Owners is an alias into finance/owners — skip separate top item if we

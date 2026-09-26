@@ -41,26 +41,26 @@ export function CrmShell({ email, name, demoMode = false, children }: Props) {
       <CrmSidebar mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div className={CRM_SIDEBAR_WIDTH_CLASS}>
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#EDF1F6] bg-white/94 px-4 backdrop-blur-sm sm:px-6">
+        <header className="sticky top-0 z-20 flex h-11 items-center justify-between border-b border-[#EDF1F6] bg-white/94 px-4 backdrop-blur-sm sm:px-5">
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#65738F] hover:bg-[var(--finance-hover)] md:hidden"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#65738F] hover:bg-[var(--finance-hover)] md:hidden"
             aria-label="Открыть меню"
             onClick={() => setMenuOpen(true)}
           >
-            <IconMenu size={20} />
+            <IconMenu size={18} />
           </button>
 
           {demoMode ? (
             <span
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--finance-border)] bg-[var(--finance-blue-light)] px-2.5 py-1 text-[11px] font-semibold text-[var(--finance-blue)]"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--finance-border)] bg-[var(--finance-blue-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--finance-blue)]"
               title="Демонстрационная версия — данные искусственные"
             >
               Rental OS · DEMO
             </span>
           ) : null}
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2">
             <div className="relative">
               <button
                 type="button"
@@ -103,7 +103,7 @@ export function CrmShell({ email, name, demoMode = false, children }: Props) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1480px] px-4 pt-5 pb-10 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1480px] px-4 pt-3 pb-6 sm:px-5">{children}</main>
       </div>
     </div>
   );

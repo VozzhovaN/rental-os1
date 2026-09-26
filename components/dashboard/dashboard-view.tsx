@@ -57,11 +57,11 @@ import { bookingStatusLabels, calendarStatusLegend } from "@/lib/guest-labels";
 import { formatMoney, propertyTypeLabels } from "@/lib/property-labels";
 import type { PropertyDTO } from "@/lib/properties";
 
-const DAY_COL_PX = 44;
-const PROPERTY_COL_PX = 248;
-const ROW_H = 56;
-const VISIBLE_PROPERTY_ROWS = 6;
-const DATE_HEADER_H = 48;
+const DAY_COL_PX = 42;
+const PROPERTY_COL_PX = 220;
+const ROW_H = 48;
+const VISIBLE_PROPERTY_ROWS = 7;
+const DATE_HEADER_H = 40;
 
 type DashboardViewProps = {
   data: DashboardData;
@@ -327,13 +327,13 @@ export function DashboardView({
     : formatHumanDate(filters.date);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {toast ? (
-        <div className="flex items-center justify-between rounded-xl border border-[#D6F1E5] bg-[#EFFAF5] px-3 py-2 text-sm text-[#0F766E]">
+        <div className="flex items-center justify-between rounded-lg border border-[#D6F1E5] bg-[#EFFAF5] px-3 py-1.5 text-[13px] text-[#0F766E]">
           <span>{toast}</span>
           <button
             type="button"
-            className="text-xs font-medium hover:underline"
+            className="text-[11px] font-medium hover:underline"
             onClick={() => setToast(null)}
           >
             Закрыть
@@ -342,32 +342,34 @@ export function DashboardView({
       ) : null}
 
       {/* Page header */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-[#0F172A] sm:text-[30px]">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-bold leading-none tracking-tight text-[#0F172A] sm:text-[24px]">
             Dashboard
           </h1>
-          <p className="mt-0.5 text-[14px] text-[#64748B]">Управление посуточной арендой</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-[#64748B]">
+            Управление посуточной арендой
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <p className="text-[13px] text-[#64748B]">{dateTitle}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[12px] text-[#64748B]">{dateTitle}</p>
           <Link
             href={newBookingHref}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--finance-blue)] px-3 text-[13px] font-semibold text-white hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--finance-blue)]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--finance-blue)] px-2.5 text-[12px] font-semibold text-white hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--finance-blue)]"
           >
-            <IconPlus size={16} />
+            <IconPlus size={14} />
             Новая бронь
           </Link>
         </div>
       </div>
 
       {/* KPI */}
-      <section className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-5">
+      <section className="grid grid-cols-2 gap-1.5 md:grid-cols-3 xl:grid-cols-5">
         <KpiCard
           label="Объекты"
           value={String(data.stats.properties)}
           hint="Активные"
-          icon={<IconBuilding size={16} />}
+          icon={<IconBuilding size={13} />}
           iconBg="bg-[#EEF3FF]"
           iconColor="text-[#3977F6]"
         />
@@ -375,7 +377,7 @@ export function DashboardView({
           label="Заезды"
           value={String(data.stats.checkIns)}
           hint="Сегодня"
-          icon={<IconUsers size={16} />}
+          icon={<IconUsers size={13} />}
           iconBg="bg-[#E9FAF4]"
           iconColor="text-[#12A87C]"
         />
@@ -383,7 +385,7 @@ export function DashboardView({
           label="Выезды"
           value={String(data.stats.checkOuts)}
           hint="Сегодня"
-          icon={<IconTrendingUp size={16} />}
+          icon={<IconTrendingUp size={13} />}
           iconBg="bg-[#F3EEFF]"
           iconColor="text-[#7C5CFC]"
         />
@@ -391,7 +393,7 @@ export function DashboardView({
           label="Доход"
           value={formatMoney(data.stats.income)}
           hint="За период"
-          icon={<IconWallet size={16} />}
+          icon={<IconWallet size={13} />}
           iconBg="bg-[#E9FAF4]"
           iconColor="text-[#119B81]"
         />
@@ -399,20 +401,19 @@ export function DashboardView({
           label="Брони"
           value={String(data.stats.bookings)}
           hint="За период"
-          icon={<IconCalendar size={16} />}
+          icon={<IconCalendar size={13} />}
           iconBg="bg-[#EEF3FF]"
           iconColor="text-[#4F6EF7]"
         />
       </section>
 
-      {/* Today block removed — operational feed lives in right sidebar */}
-
-      {/* Filters */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Filters — one compact row on desktop */}
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center">
         <FilterSelect
           label="Объект"
           value={filters.propertyId ?? ""}
           onChange={(v) => pushFilters({ propertyId: v || undefined })}
+          className="sm:w-[11.5rem]"
         >
           <option value="">Все объекты</option>
           {propertyOptions.map((p) => (
@@ -429,6 +430,7 @@ export function DashboardView({
               propertyType: (v || undefined) as DashboardFilters["propertyType"],
             })
           }
+          className="sm:w-[9.5rem]"
         >
           <option value="">Все типы</option>
           <option value="APARTMENT">{propertyTypeLabels.APARTMENT}</option>
@@ -444,13 +446,14 @@ export function DashboardView({
               bookingStatus: (v || undefined) as DashboardFilters["bookingStatus"],
             })
           }
+          className="sm:w-[11rem]"
         >
           <option value="">Все актуальные</option>
           <option value="PENDING">Ожидают подтверждения</option>
           <option value="CONFIRMED">Подтверждены</option>
           <option value="COMPLETED">Завершены</option>
         </FilterSelect>
-        <label className="relative flex h-11 items-center rounded-lg border border-[#DFE6F0] bg-white px-3">
+        <label className="relative flex h-10 min-w-0 flex-1 items-center rounded-lg border border-[#DFE6F0] bg-white px-2.5 sm:min-w-[14rem]">
           <span className="sr-only">Поиск объекта</span>
           <input
             type="search"
@@ -473,52 +476,54 @@ export function DashboardView({
       </div>
 
       {/* Calendar + right sidebar */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,3.2fr)_minmax(260px,0.9fr)]">
+      <div className="grid grid-cols-1 gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(240px,280px)]">
         <div className="order-1 xl:col-start-2 xl:row-start-1">
           <TodayEventsPanel data={todayEvents} />
         </div>
 
         {/* Calendar */}
         <section className="finance-card order-2 min-w-0 overflow-hidden xl:col-start-1 xl:row-span-2 xl:row-start-1">
-        <div className="flex flex-col gap-2 border-b border-[#EDF1F6] px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-          <h2 className="text-[16px] font-bold text-[#0F172A]">Календарь занятости</h2>
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-col gap-1.5 border-b border-[#EDF1F6] px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-[14px] font-bold leading-none text-[#0F172A]">
+            Календарь занятости
+          </h2>
+          <div className="flex flex-wrap items-center gap-1">
             <Link
               href={dashboardHref({ ...filters, ...prevMonth })}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#DFE6F0] text-[#64748B] hover:bg-[var(--finance-hover)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#DFE6F0] text-[#64748B] hover:bg-[var(--finance-hover)]"
               aria-label="Предыдущий месяц"
             >
               ←
             </Link>
             <Link
               href={todayHref}
-              className="inline-flex h-8 items-center rounded-lg border border-[#DFE6F0] px-2.5 text-[12px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)]"
+              className="inline-flex h-7 items-center rounded-md border border-[#DFE6F0] px-2 text-[11px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)]"
             >
               Сегодня
             </Link>
-            <p className="min-w-[8.5rem] text-center text-[13px] font-semibold capitalize text-[#0F172A]">
+            <p className="min-w-[7.5rem] text-center text-[12px] font-semibold capitalize text-[#0F172A]">
               {formatMonthTitle(filters.year, filters.month)}
             </p>
             <Link
               href={dashboardHref({ ...filters, ...nextMonth })}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#DFE6F0] text-[#64748B] hover:bg-[var(--finance-hover)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#DFE6F0] text-[#64748B] hover:bg-[var(--finance-hover)]"
               aria-label="Следующий месяц"
             >
               →
             </Link>
             <Link
               href={newBookingHref}
-              className="ml-1 inline-flex h-8 items-center gap-1 rounded-lg border border-[#DFE6F0] bg-white px-2.5 text-[12px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)]"
+              className="ml-0.5 inline-flex h-7 items-center gap-1 rounded-md border border-[#DFE6F0] bg-white px-2 text-[11px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)]"
             >
-              <IconPlus size={14} />
+              <IconPlus size={12} />
               Новая бронь
             </Link>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-[11px] text-[#64748B]">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 px-3 py-1.5 text-[10px] text-[#64748B]">
           {calendarStatusLegend.map((item) => (
-            <span key={item.status} className="inline-flex items-center gap-1.5">
+            <span key={item.status} className="inline-flex items-center gap-1">
               <span
                 className={`booking-legend-swatch booking-legend-${item.status.toLowerCase()}`}
               />
@@ -531,16 +536,16 @@ export function DashboardView({
         </div>
 
         {data.properties.length === 0 ? (
-          <div className="px-6 py-10 text-center">
-            <p className="text-[15px] font-semibold text-[#0F172A]">Нет объектов</p>
-            <p className="mt-1 text-[13px] text-[#64748B]">
+          <div className="px-5 py-8 text-center">
+            <p className="text-[14px] font-semibold text-[#0F172A]">Нет объектов</p>
+            <p className="mt-1 text-[12px] text-[#64748B]">
               Добавьте первый объект, чтобы начать работу с календарём бронирований.
             </p>
             <Link
               href="/crm/properties/new"
-              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--finance-blue)] px-3.5 text-[13px] font-semibold text-white"
+              className="mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--finance-blue)] px-3 text-[12px] font-semibold text-white"
             >
-              <IconPlus size={16} />
+              <IconPlus size={14} />
               Добавить объект
             </Link>
           </div>
@@ -560,7 +565,7 @@ export function DashboardView({
                   style={{ height: DATE_HEADER_H }}
                 >
                   <div
-                    className="sticky left-0 z-40 flex shrink-0 items-center border-r border-[#EDF1F6] bg-white px-3 text-[11px] font-medium uppercase tracking-wide text-[#94A3B8]"
+                    className="sticky left-0 z-40 flex shrink-0 items-center border-r border-[#EDF1F6] bg-white px-2.5 text-[10px] font-medium uppercase tracking-wide text-[#94A3B8]"
                     style={{ width: PROPERTY_COL_PX }}
                   >
                     Объект
@@ -572,24 +577,25 @@ export function DashboardView({
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`flex shrink-0 flex-col items-center justify-center text-[11px] ${
+                          className={`flex shrink-0 flex-col items-center justify-center text-[10px] ${
                             weekend && !isToday ? "bg-[#F8FAFC]" : ""
                           }`}
                           style={{ width: DAY_COL_PX }}
                         >
                           <span
-                            className={`capitalize ${
+                            className={`capitalize leading-none ${
                               weekend && !isToday ? "text-[#F87171]" : "text-[#94A3B8]"
                             }`}
                           >
                             {formatWeekdayShort(day)}
                           </span>
                           <span
-                            className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${
+                            className={`mt-0.5 flex items-center justify-center rounded-full text-[10px] font-semibold ${
                               isToday
                                 ? "bg-[var(--finance-blue)] text-white"
                                 : "text-[#0F172A]"
                             }`}
+                            style={{ height: 18, width: 18 }}
                           >
                             {String(day.getUTCDate()).padStart(2, "0")}
                           </span>
@@ -613,7 +619,7 @@ export function DashboardView({
                       style={{ height: ROW_H }}
                     >
                       <div
-                        className="sticky left-0 z-20 flex shrink-0 items-center gap-2 border-r border-[#EDF1F6] bg-white px-3"
+                        className="sticky left-0 z-20 flex shrink-0 items-center gap-1.5 border-r border-[#EDF1F6] bg-white px-2.5"
                         style={{ width: PROPERTY_COL_PX }}
                       >
                         {photo ? (
@@ -621,21 +627,21 @@ export function DashboardView({
                           <img
                             src={photo}
                             alt=""
-                            className="h-8 w-8 shrink-0 rounded-md object-cover"
+                            className="h-7 w-7 shrink-0 rounded-md object-cover"
                           />
                         ) : (
-                          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#E8EEF6] text-[#94A3B8]">
-                            <IconBuilding size={14} />
+                          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#E8EEF6] text-[#94A3B8]">
+                            <IconBuilding size={13} />
                           </span>
                         )}
                         <div className="min-w-0">
                           <p
-                            className="truncate text-[13px] font-semibold leading-tight text-[#0F172A]"
+                            className="truncate text-[12px] font-semibold leading-tight text-[#0F172A]"
                             title={property.name}
                           >
                             {property.name}
                           </p>
-                          <p className="truncate text-[11px] text-[#94A3B8]">
+                          <p className="truncate text-[10px] leading-tight text-[#94A3B8]">
                             {propertySubtitle(property)}
                           </p>
                         </div>
@@ -748,7 +754,7 @@ export function DashboardView({
             </div>
 
             {data.properties.length > VISIBLE_PROPERTY_ROWS ? (
-              <p className="border-t border-[#EDF1F6] px-4 py-1.5 text-center text-[11px] text-[#94A3B8]">
+              <p className="border-t border-[#EDF1F6] px-3 py-1 text-center text-[10px] text-[#94A3B8]">
                 Показаны {VISIBLE_PROPERTY_ROWS} из {data.properties.length} · прокрутите календарь
                 колёсиком
               </p>
@@ -803,10 +809,10 @@ export function DashboardView({
       </div>
 
       {/* Bottom blocks */}
-      <section className="grid grid-cols-1 gap-3 lg:grid-cols-[1.7fr_1fr_0.9fr]">
+      <section className="grid grid-cols-1 gap-2 lg:grid-cols-3">
         <div className="finance-card min-w-0 overflow-hidden">
-          <div className="flex items-center justify-between gap-2 border-b border-[#EDF1F6] px-3 py-2">
-            <h2 className="text-[15px] font-semibold text-[#0F172A]">Ближайшие брони</h2>
+          <div className="flex items-center justify-between gap-2 border-b border-[#EDF1F6] px-3 py-1.5">
+            <h2 className="text-[13px] font-semibold text-[#0F172A]">Ближайшие брони</h2>
             <Link
               href="/crm/bookings"
               className="shrink-0 text-[11px] font-medium text-[var(--finance-blue)] hover:underline"
@@ -814,20 +820,20 @@ export function DashboardView({
               Все →
             </Link>
           </div>
-          <div className="max-h-[220px] overflow-auto">
+          <div className="max-h-[200px] overflow-auto">
             <table className="min-w-full text-left text-[12px]">
               <thead className="sticky top-0 bg-white text-[10px] text-[#94A3B8]">
                 <tr className="border-b border-[#EDF1F6]">
-                  <th className="px-3 py-1.5 font-medium">Гость</th>
-                  <th className="px-3 py-1.5 font-medium">Объект</th>
-                  <th className="px-3 py-1.5 font-medium">Заезд</th>
-                  <th className="px-3 py-1.5 font-medium">Статус</th>
+                  <th className="px-3 py-1 font-medium">Гость</th>
+                  <th className="px-3 py-1 font-medium">Объект</th>
+                  <th className="px-3 py-1 font-medium">Заезд</th>
+                  <th className="px-3 py-1 font-medium">Статус</th>
                 </tr>
               </thead>
               <tbody>
                 {upcoming.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-[12px] text-[#94A3B8]">
+                    <td colSpan={4} className="px-3 py-5 text-center text-[12px] text-[#94A3B8]">
                       Нет ближайших бронирований
                     </td>
                   </tr>
@@ -838,16 +844,16 @@ export function DashboardView({
                       className="cursor-pointer border-b border-[#EDF1F6] hover:bg-[#F8FAFD]"
                       onClick={() => router.push(`/crm/bookings/${booking.id}`)}
                     >
-                      <td className="max-w-[90px] truncate px-3 py-1.5 font-medium text-[#0F172A]">
+                      <td className="max-w-[90px] truncate px-3 py-1 font-medium text-[#0F172A]">
                         {formatGuestName(booking.guest)}
                       </td>
-                      <td className="max-w-[90px] truncate px-3 py-1.5 text-[#64748B]">
+                      <td className="max-w-[90px] truncate px-3 py-1 text-[#64748B]">
                         {booking.property.name}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-1.5 text-[#64748B]">
+                      <td className="whitespace-nowrap px-3 py-1 text-[#64748B]">
                         {formatDate(booking.checkIn)}
                       </td>
-                      <td className="px-3 py-1.5">
+                      <td className="px-3 py-1">
                         <StatusBadge status={booking.status} />
                       </td>
                     </tr>
@@ -860,19 +866,19 @@ export function DashboardView({
 
         <BookingChannelsPanel data={channelStats} />
 
-        <div className="finance-card p-3">
-          <h2 className="text-[15px] font-semibold text-[#0F172A]">Загрузка объектов</h2>
-          <p className="mt-0.5 text-[11px] text-[#94A3B8]">На сегодня · по видимым объектам</p>
-          <p className="mt-2.5 text-[24px] font-bold tabular-nums leading-none text-[#0F172A]">
+        <div className="finance-card p-2.5">
+          <h2 className="text-[13px] font-semibold text-[#0F172A]">Загрузка объектов</h2>
+          <p className="mt-0.5 text-[10px] text-[#94A3B8]">На сегодня · по видимым объектам</p>
+          <p className="mt-2 text-[22px] font-bold tabular-nums leading-none text-[#0F172A]">
             {occupancy.pct}%
           </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E8EEF6]">
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#E8EEF6]">
             <div
               className="h-full rounded-full bg-[var(--finance-blue)] transition-[width]"
               style={{ width: `${occupancy.pct}%` }}
             />
           </div>
-          <dl className="mt-2.5 space-y-1 text-[12px]">
+          <dl className="mt-2 space-y-0.5 text-[12px]">
             <div className="flex justify-between">
               <dt className="text-[#64748B]">Занято</dt>
               <dd className="font-semibold tabular-nums text-[#0F172A]">{occupancy.busy}</dd>
@@ -908,21 +914,19 @@ function KpiCard({
   iconColor: string;
 }) {
   return (
-    <div className="finance-card flex min-h-[92px] flex-col p-3">
-      <div className="flex items-center gap-2">
+    <div className="finance-card flex h-[72px] flex-col justify-between rounded-xl px-3 py-2">
+      <div className="flex items-center gap-1.5">
         <span
-          className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}
+          className={`inline-flex h-5 w-5 items-center justify-center rounded-md ${iconBg} ${iconColor}`}
         >
           {icon}
         </span>
-        <span className="text-[11px] font-medium uppercase tracking-wide text-[#64748B]">
-          {label}
-        </span>
+        <span className="text-[11px] font-medium text-[#64748B]">{label}</span>
       </div>
-      <p className="mt-2 text-[24px] font-bold leading-none tabular-nums tracking-tight text-[#0F172A]">
+      <p className="text-[20px] font-bold leading-none tabular-nums tracking-tight text-[#0F172A]">
         {value}
       </p>
-      <p className="mt-auto pt-1.5 text-[11px] text-[#94A3B8]">{hint}</p>
+      <p className="text-[11px] leading-none text-[#94A3B8]">{hint}</p>
     </div>
   );
 }
@@ -932,14 +936,18 @@ function FilterSelect({
   value,
   onChange,
   children,
+  className = "",
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <label className="relative flex h-11 items-center rounded-lg border border-[#DFE6F0] bg-white px-3">
+    <label
+      className={`relative flex h-10 items-center rounded-lg border border-[#DFE6F0] bg-white px-2.5 ${className}`.trim()}
+    >
       <span className="sr-only">{label}</span>
       <select
         value={value}

@@ -70,38 +70,38 @@ export function TodayEventsPanel({ data }: TodayEventsPanelProps) {
   ] as const;
 
   return (
-    <section className="finance-card flex flex-col p-3">
+    <section className="finance-card flex flex-col p-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-[15px] font-semibold tracking-tight text-[#0F172A]">
+        <h2 className="text-[13px] font-semibold tracking-tight text-[#0F172A]">
           События сегодня
         </h2>
-        <p className="shrink-0 text-[11px] text-[#94A3B8]">{formatHumanDate(data.date)}</p>
+        <p className="shrink-0 text-[10px] text-[#94A3B8]">{formatHumanDate(data.date)}</p>
       </div>
 
-      <div className="mt-2 grid grid-cols-4 overflow-hidden rounded-lg border border-[#E7ECF3]">
+      <div className="mt-1.5 grid grid-cols-4 overflow-hidden rounded-lg border border-[#E7ECF3]">
         {counters.map((item, index) => (
           <div
             key={item.key}
-            className={`bg-white px-1.5 py-1.5 text-center ${
+            className={`bg-white px-1 py-1 text-center ${
               index < 3 ? "border-r border-[#E7ECF3]" : ""
             }`}
           >
-            <p className="text-[10px] font-medium text-[#94A3B8]">{item.label}</p>
-            <p className="mt-0.5 text-[16px] font-semibold tabular-nums leading-none text-[#0F172A]">
+            <p className="text-[9px] font-medium text-[#94A3B8]">{item.label}</p>
+            <p className="mt-0.5 text-[15px] font-semibold tabular-nums leading-none text-[#0F172A]">
               {item.value}
             </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-2 min-h-0">
+      <div className="mt-1.5 min-h-0">
         {data.events.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg bg-[#F8FAFC] px-2.5 py-2.5 text-[12px] text-[#94A3B8]">
-            <IconCalendar size={14} />
+          <div className="flex items-center gap-2 rounded-lg bg-[#F8FAFC] px-2 py-2 text-[11px] text-[#94A3B8]">
+            <IconCalendar size={13} />
             На сегодня событий нет
           </div>
         ) : (
-          <ul className="max-h-[148px] space-y-1.5 overflow-y-auto overscroll-contain pr-0.5">
+          <ul className="max-h-[132px] space-y-1 overflow-y-auto overscroll-contain pr-0.5">
             {data.events.map((event) => {
               const style = KIND_STYLE[event.kind];
               const Icon = style.icon;
@@ -109,24 +109,24 @@ export function TodayEventsPanel({ data }: TodayEventsPanelProps) {
                 <li key={event.id}>
                   <Link
                     href={event.href}
-                    className={`block rounded-lg border border-[#EDF1F6] border-l-[3px] ${style.bar} bg-white px-2 py-1.5 transition-colors hover:bg-[#F8FAFD]`}
+                    className={`block rounded-md border border-[#EDF1F6] border-l-[3px] ${style.bar} bg-white px-1.5 py-1 transition-colors hover:bg-[#F8FAFD]`}
                   >
-                    <div className="flex items-start gap-2">
-                      <span className="w-9 shrink-0 pt-px text-[12px] font-semibold tabular-nums text-[#0F172A]">
+                    <div className="flex items-start gap-1.5">
+                      <span className="w-8 shrink-0 pt-px text-[11px] font-semibold tabular-nums text-[#0F172A]">
                         {event.time ?? "—"}
                       </span>
                       <div className="min-w-0 flex-1">
                         <span
-                          className={`inline-flex items-center gap-1 rounded px-1 py-px text-[10px] font-medium ${style.chip}`}
+                          className={`inline-flex items-center gap-1 rounded px-1 py-px text-[9px] font-medium ${style.chip}`}
                         >
-                          <Icon size={10} aria-hidden />
+                          <Icon size={9} aria-hidden />
                           {event.label}
                         </span>
-                        <p className="mt-0.5 truncate text-[12px] font-medium leading-tight text-[#0F172A]">
+                        <p className="mt-0.5 truncate text-[11px] font-medium leading-tight text-[#0F172A]">
                           {event.propertyName}
                         </p>
                         {event.personName ? (
-                          <p className="truncate text-[11px] leading-tight text-[#64748B]">
+                          <p className="truncate text-[10px] leading-tight text-[#64748B]">
                             {event.personName}
                           </p>
                         ) : null}

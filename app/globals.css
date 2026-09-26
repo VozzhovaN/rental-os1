@@ -92,16 +92,16 @@ body {
 
 .booking-bar {
   position: absolute;
-  top: 0.35rem;
-  bottom: 0.35rem;
+  top: 0.25rem;
+  bottom: 0.25rem;
   display: flex;
   align-items: center;
   overflow: hidden;
-  border-radius: 8px;
-  padding: 0 0.55rem;
-  font-size: 0.7rem;
+  border-radius: 6px;
+  padding: 0 0.4rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.1;
   cursor: pointer;
   box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
   border: 1px solid transparent;

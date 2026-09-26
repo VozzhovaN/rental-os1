@@ -160,57 +160,57 @@ export function SalesCalendarPanel({ initialData }: SalesCalendarPanelProps) {
   }
 
   return (
-    <section className="finance-card flex flex-col p-3">
+    <section className="finance-card flex flex-col p-2.5">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold tracking-tight text-[#0F172A]">
+        <h2 className="text-[13px] font-semibold tracking-tight text-[#0F172A]">
           Календарь продаж
         </h2>
         <button
           type="button"
           onClick={goToday}
-          className="inline-flex h-7 items-center rounded-md border border-[#E7ECF3] px-2 text-[11px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)]"
+          className="inline-flex h-6 items-center rounded-md border border-[#E7ECF3] px-1.5 text-[10px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)]"
         >
           Сегодня
         </button>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-1">
+      <div className="mt-1.5 flex items-center justify-between gap-1">
         <button
           type="button"
           onClick={goPrev}
           disabled={loading}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#E7ECF3] text-[#64748B] hover:bg-[var(--finance-hover)] disabled:opacity-50"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[#E7ECF3] text-[#64748B] hover:bg-[var(--finance-hover)] disabled:opacity-50"
           aria-label="Предыдущий месяц"
         >
-          <IconChevronLeft size={14} />
+          <IconChevronLeft size={13} />
         </button>
-        <p className="text-[12px] font-semibold capitalize text-[#0F172A]">
+        <p className="text-[11px] font-semibold capitalize text-[#0F172A]">
           {formatMonthTitle(data.year, data.month)}
         </p>
         <button
           type="button"
           onClick={goNext}
           disabled={loading}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#E7ECF3] text-[#64748B] hover:bg-[var(--finance-hover)] disabled:opacity-50"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[#E7ECF3] text-[#64748B] hover:bg-[var(--finance-hover)] disabled:opacity-50"
           aria-label="Следующий месяц"
         >
-          <IconChevronRight size={14} />
+          <IconChevronRight size={13} />
         </button>
       </div>
 
-      <div className={`mt-1.5 ${loading ? "opacity-60" : ""}`}>
+      <div className={`mt-1 ${loading ? "opacity-60" : ""}`}>
         <div className="grid grid-cols-7">
           {WEEKDAYS.map((label) => (
             <div
               key={label}
-              className="py-0.5 text-center text-[10px] font-medium text-[#94A3B8]"
+              className="py-0.5 text-center text-[9px] font-medium text-[#94A3B8]"
             >
               {label}
             </div>
           ))}
           {cells.map((day, index) => {
             if (!day) {
-              return <div key={`empty-${index}`} className="h-8" />;
+              return <div key={`empty-${index}`} className="h-7" />;
             }
             const iso = day.toISOString().slice(0, 10);
             const summary = dayMap.get(iso);
@@ -221,7 +221,7 @@ export function SalesCalendarPanel({ initialData }: SalesCalendarPanelProps) {
                 key={iso}
                 type="button"
                 onClick={() => setSelectedDate(iso)}
-                className={`flex h-8 flex-col items-center justify-center rounded-md text-[11px] transition-colors ${
+                className={`flex h-7 flex-col items-center justify-center rounded-md text-[10px] transition-colors ${
                   isSelected
                     ? "bg-[var(--finance-blue)] font-semibold text-white"
                     : isToday
@@ -260,20 +260,20 @@ export function SalesCalendarPanel({ initialData }: SalesCalendarPanelProps) {
       </div>
 
       {error ? (
-        <p className="mt-1.5 text-[11px] text-[#EF4E62]">{error}</p>
+        <p className="mt-1 text-[11px] text-[#EF4E62]">{error}</p>
       ) : null}
 
-      <div className="mt-2 border-t border-[#EDF1F6] pt-2">
-        <p className="text-[12px] font-semibold text-[#0F172A]">
+      <div className="mt-1.5 border-t border-[#EDF1F6] pt-1.5">
+        <p className="text-[11px] font-semibold text-[#0F172A]">
           {formatHumanDate(selectedDate)}
         </p>
         {selectedEvents.length === 0 ? (
-          <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#F8FAFC] px-2 py-2 text-[11px] text-[#94A3B8]">
-            <IconCalendar size={14} />
+          <div className="mt-1 flex items-center gap-1.5 rounded-lg bg-[#F8FAFC] px-2 py-1.5 text-[10px] text-[#94A3B8]">
+            <IconCalendar size={12} />
             Нет событий на этот день
           </div>
         ) : (
-          <ul className="mt-1.5 max-h-[110px] space-y-1 overflow-y-auto overscroll-contain">
+          <ul className="mt-1 max-h-[96px] space-y-1 overflow-y-auto overscroll-contain">
             {selectedEvents.map((event) => (
               <SalesEventRow key={event.id} event={event} />
             ))}
