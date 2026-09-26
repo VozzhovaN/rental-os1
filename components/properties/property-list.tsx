@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type MouseEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
 import {
@@ -164,7 +164,7 @@ function QuickActionsMenu({ item }: { item: PropertyListItem }) {
 
   useEffect(() => {
     if (!open) return;
-    function onDoc(event: MouseEvent) {
+    function onDoc(event: globalThis.MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         setOpen(false);
       }
@@ -210,7 +210,7 @@ function QuickActionsMenu({ item }: { item: PropertyListItem }) {
     label: "Финансы объекта",
   });
 
-  async function sendPdf(event: MouseEvent) {
+  async function sendPdf(event: ReactMouseEvent) {
     event.preventDefault();
     event.stopPropagation();
     if (pdfPending) return;
