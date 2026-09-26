@@ -29,9 +29,12 @@
 !/public/uploads/.gitkeep
 /storage/**
 !/storage/.gitkeep
+!/storage/properties/
 !/storage/properties/.gitkeep
+# Course demo JPEGs are committed so Railway seed works offline (no Unsplash).
+# Real uploads under storage/properties/{id}/ stay ignored.
 !/storage/demo/
-!/storage/demo/README.md
+!/storage/demo/**
 
 # debug
 npm-debug.log*
