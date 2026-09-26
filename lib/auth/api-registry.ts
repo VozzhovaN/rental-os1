@@ -66,6 +66,12 @@ export const API_ROUTE_REGISTRY: readonly RegisteredApiRoute[] = [
     access: ROUTE_ACCESS.AUTH_REQUIRED,
   },
 
+  {
+    routeFile: "pricing/day-prices/route.ts",
+    pathPattern: "/api/pricing/day-prices",
+    access: ROUTE_ACCESS.AUTH_REQUIRED,
+  },
+
   { routeFile: "finance/transactions/route.ts", pathPattern: "/api/finance/transactions", access: ROUTE_ACCESS.AUTH_REQUIRED },
   { routeFile: "finance/expenses/route.ts", pathPattern: "/api/finance/expenses", access: ROUTE_ACCESS.AUTH_REQUIRED },
   { routeFile: "finance/adjustments/route.ts", pathPattern: "/api/finance/adjustments", access: ROUTE_ACCESS.AUTH_REQUIRED },

@@ -30,6 +30,8 @@
 /storage/**
 !/storage/.gitkeep
 !/storage/properties/.gitkeep
+!/storage/demo/
+!/storage/demo/README.md
 
 # debug
 npm-debug.log*

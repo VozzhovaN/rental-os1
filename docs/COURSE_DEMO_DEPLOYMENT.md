@@ -101,6 +101,12 @@ This is fail-closed (`scripts/demo-reset.ts` → `assertDemoResetAllowed`):
 It then recreates the schema on the demo DB and reloads the demo seed. There is
 **no** public reset endpoint.
 
+Demo property photos are stored under `$PHOTO_STORAGE_ROOT/demo/` (local default:
+`storage/demo/properties/{slug}/`). That folder is disposable — wipe it together
+with the demo DB. Real CRM uploads stay under `properties/{propertyId}/` and are
+never mixed with demo assets. `demo:reset` deletes `storage/demo/` after clearing
+DB rows.
+
 For a lightweight backup, copy the demo DB + `PHOTO_STORAGE_ROOT` together (see
 `BACKUP_RESTORE.md`). This does not replace the Stage 13 production backup plan.
 

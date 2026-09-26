@@ -23,6 +23,12 @@ import { createManualExpense } from "@/lib/finance/service";
 import { createCommissionPayment } from "@/lib/finance/commission-finance";
 import { generateLongTermCharges, recordLongTermPayment } from "@/lib/finance/long-term-finance";
 import { createPresentation } from "@/lib/presentations";
+import { setDayPriceRange } from "@/lib/pricing/day-prices";
+import {
+  linkDemoListingPhotos,
+  seedDemoPropertyPhotos,
+  wipeDemoPhotoFiles,
+} from "@/lib/demo/demo-photos";
 
 // ---------------------------------------------------------------------------
 // Relative date helpers (UTC, midday to avoid TZ edge cases).
@@ -189,12 +195,16 @@ export async function resetDemoData(): Promise<void> {
 
   await prisma.channelListing.deleteMany();
   await prisma.propertyPhoto.deleteMany();
+  await prisma.propertyDayPrice.deleteMany();
 
   await prisma.guestHistory.deleteMany();
   await prisma.property.deleteMany();
   await prisma.guest.deleteMany();
   await prisma.owner.deleteMany();
   await prisma.salesChannel.deleteMany();
+
+  // Disposable demo photo bytes under storage/demo/ — safe to wipe with demo data.
+  await wipeDemoPhotoFiles();
 }
 
 // ---------------------------------------------------------------------------
@@ -271,6 +281,28 @@ export async function seedDemo(): Promise<void> {
     if (!found) throw new Error(`Demo property missing: ${slug}`);
     return found;
   };
+
+  // Photos for every demo property → storage/demo/properties/{slug}/ (disposable).
+  await seedDemoPropertyPhotos(
+    [...propBySlug.values()].map((p) => ({ id: p.id, slug: p.slug })),
+  );
+
+  // Nightly price overrides (Stage 16.0): make the calendar pricing visible.
+  // Tariff only — does NOT affect Booking.totalAmount or finance. Idempotent (upsert).
+  const priceOverrides = [
+    { slug: "demo-morskoy-vid", from: `${CURRENT_MONTH}-10`, to: `${CURRENT_MONTH}-14`, price: 9000 },
+    { slug: "demo-morskoy-vid", from: `${CURRENT_MONTH}-20`, to: `${CURRENT_MONTH}-22`, price: 4500 },
+    { slug: "demo-panoramnyy-lyuks", from: `${CURRENT_MONTH}-05`, to: `${CURRENT_MONTH}-08`, price: 11000 },
+    { slug: "demo-loft-centr", from: `${CURRENT_MONTH}-12`, to: `${CURRENT_MONTH}-16`, price: 8200 },
+  ];
+  for (const o of priceOverrides) {
+    await setDayPriceRange({
+      propertyId: prop(o.slug).id,
+      dateFrom: o.from,
+      dateTo: o.to,
+      price: o.price,
+    });
+  }
   const channel = (code: string) => {
     const found = channelByCode.get(code);
     if (!found) throw new Error(`Demo channel missing: ${code}`);
@@ -515,6 +547,9 @@ export async function seedDemo(): Promise<void> {
       create: { saleListingId: saleActive.id, salesChannelId: ch.id, status: "NOT_PUBLISHED" },
     });
   }
+
+  // Attach property photos to LT / Sale listing galleries.
+  await linkDemoListingPhotos();
 
   // 12. Presentations: one DRAFT, one PUBLISHED (secure random tokens, guarded).
   const draftTitle = "Демо-подборка (черновик)";

@@ -8,6 +8,8 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import {
@@ -33,6 +35,7 @@ import type {
   DashboardFilters,
 } from "@/lib/dashboard";
 import { dashboardHref, shiftDashboardMonth } from "@/lib/dashboard";
+import type { DayPriceData } from "@/lib/pricing/day-prices";
 import type {
   DashboardTodayEvents,
   SalesCalendarData,
@@ -107,6 +110,35 @@ function isWeekend(day: Date) {
   return wd === 0 || wd === 6;
 }
 
+type EffectivePrice = { price: number | null; isOverride: boolean };
+
+/** Effective nightly price = override ?? base Property.dailyPrice ?? null. */
+function effectivePrice(
+  dayPrices: DayPriceData,
+  propertyId: string,
+  dateIso: string,
+): EffectivePrice {
+  const override = dayPrices.overrides[propertyId]?.[dateIso];
+  if (override != null) return { price: override, isOverride: true };
+  const base = dayPrices.basePriceByProperty[propertyId];
+  return { price: base ?? null, isOverride: false };
+}
+
+/** Compact price for the narrow calendar cell: 4500 → "4,5к", 12000 → "12к". */
+function formatPriceCompact(price: number): string {
+  if (price < 1000) return String(price);
+  const thousands = price / 1000;
+  const rounded = Math.round(thousands * 10) / 10;
+  const text = Number.isInteger(rounded)
+    ? String(rounded)
+    : rounded.toFixed(1).replace(".", ",");
+  return `${text}к`;
+}
+
+function isoBetween(a: string, b: string): { from: string; to: string } {
+  return a <= b ? { from: a, to: b } : { from: b, to: a };
+}
+
 export function DashboardView({
   data,
   filters,
@@ -123,6 +155,20 @@ export function DashboardView({
   const [toast, setToast] = useState(() => noticeMessage(notice));
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  const [, startPriceTransition] = useTransition();
+  const [priceSel, setPriceSel] = useState<{
+    propertyId: string;
+    from: string;
+    to: string;
+    anchor: string;
+  } | null>(null);
+  const [pricePopoverPos, setPricePopoverPos] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+  const [priceInput, setPriceInput] = useState("");
+  const [priceSaving, setPriceSaving] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   const days = useMemo(
     () => utcDaysInMonth(filters.year, filters.month),
@@ -206,6 +252,75 @@ export function DashboardView({
       if (hoverTimer.current) clearTimeout(hoverTimer.current);
     };
   }, []);
+
+  const closePricePopover = useCallback(() => {
+    setPriceSel(null);
+    setPricePopoverPos(null);
+    setPriceInput("");
+    setPriceError(null);
+  }, []);
+
+  function handleCellClick(
+    property: PropertyDTO,
+    dateIso: string,
+    el: HTMLElement,
+  ) {
+    setPriceSel((cur) => {
+      if (cur && cur.propertyId === property.id) {
+        const { from, to } = isoBetween(cur.anchor, dateIso);
+        return { propertyId: property.id, from, to, anchor: cur.anchor };
+      }
+      return { propertyId: property.id, from: dateIso, to: dateIso, anchor: dateIso };
+    });
+    const eff = effectivePrice(data.dayPrices, property.id, dateIso);
+    setPriceInput(eff.price != null ? String(eff.price) : "");
+    setPriceError(null);
+    const rect = el.getBoundingClientRect();
+    const cal = calendarRef.current?.getBoundingClientRect();
+    setPricePopoverPos({
+      top: rect.bottom - (cal?.top ?? 0) + 8,
+      left: Math.min(
+        Math.max(8, rect.left - (cal?.left ?? 0)),
+        (cal?.width ?? 400) - 260,
+      ),
+    });
+  }
+
+  async function savePrice(price: number | null) {
+    if (!priceSel) return;
+    setPriceSaving(true);
+    setPriceError(null);
+    try {
+      const response = await fetch("/api/pricing/day-prices", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId: priceSel.propertyId,
+          dateFrom: priceSel.from,
+          dateTo: priceSel.to,
+          price,
+        }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        setPriceError(body?.error ?? "Не удалось сохранить цену");
+        setPriceSaving(false);
+        return;
+      }
+      setPriceSaving(false);
+      closePricePopover();
+      startPriceTransition(() => router.refresh());
+    } catch {
+      setPriceError("Сеть недоступна, попробуйте ещё раз");
+      setPriceSaving(false);
+    }
+  }
+
+  const priceSelProperty = priceSel
+    ? data.properties.find((p) => p.id === priceSel.propertyId) ?? null
+    : null;
 
   const dateTitle = isSameUtcDay(filters.date, today)
     ? `Сегодня, ${formatHumanDate(filters.date)}`
@@ -401,7 +516,7 @@ export function DashboardView({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 px-4 py-2 text-[11px] text-[#64748B]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-[11px] text-[#64748B]">
           {calendarStatusLegend.map((item) => (
             <span key={item.status} className="inline-flex items-center gap-1.5">
               <span
@@ -410,6 +525,9 @@ export function DashboardView({
               {item.label}
             </span>
           ))}
+          <span className="ml-auto text-[#94A3B8]">
+            Цена/сутки — клик по клетке задаёт цену на период
+          </span>
         </div>
 
         {data.properties.length === 0 ? (
@@ -529,21 +647,62 @@ export function DashboardView({
                             const dateValue = day.toISOString().slice(0, 10);
                             const isToday = isSameUtcDay(day, today);
                             const weekend = isWeekend(day);
+                            const eff = effectivePrice(
+                              data.dayPrices,
+                              property.id,
+                              dateValue,
+                            );
+                            const selected =
+                              priceSel?.propertyId === property.id &&
+                              dateValue >= priceSel.from &&
+                              dateValue <= priceSel.to;
                             return (
-                              <Link
+                              <button
                                 key={day.toISOString()}
-                                href={`/crm/bookings/new?propertyId=${property.id}&checkIn=${dateValue}&returnTo=${calendarReturnTo}`}
-                                title={`Создать бронь: ${property.name}, ${formatDate(day)}`}
-                                aria-label={`Свободный день ${formatDate(day)}, создать бронь для ${property.name}`}
-                                className={`group flex shrink-0 items-center justify-center border-l border-[#F1F5F9] text-transparent transition-colors hover:bg-[#F0F7FF] hover:text-[var(--finance-blue)] ${
-                                  isToday ? "bg-[#F0F7FF]/70" : weekend ? "bg-[#F8FAFC]" : ""
+                                type="button"
+                                onClick={(e) =>
+                                  handleCellClick(property, dateValue, e.currentTarget)
+                                }
+                                title={`${property.name}, ${formatDate(day)}${
+                                  eff.price != null
+                                    ? ` · ${formatMoney(eff.price)}/сутки`
+                                    : " · цена не задана"
+                                }`}
+                                aria-label={`${property.name}, ${formatDate(day)}, цена за сутки ${
+                                  eff.price != null ? formatMoney(eff.price) : "не задана"
+                                }. Нажмите, чтобы изменить цену на периоде.`}
+                                className={`group relative flex shrink-0 items-end justify-center border-l border-[#F1F5F9] pb-0.5 text-[9px] leading-none transition-colors ${
+                                  selected
+                                    ? "outline outline-2 -outline-offset-2 outline-[var(--finance-blue)]"
+                                    : ""
+                                } ${
+                                  isToday
+                                    ? "bg-[#F0F7FF]/70 hover:bg-[#E5F0FF]"
+                                    : weekend
+                                      ? "bg-[#F8FAFC] hover:bg-[#EEF3F9]"
+                                      : "hover:bg-[#F0F7FF]"
                                 }`}
                                 style={{ width: DAY_COL_PX }}
                               >
-                                <span className="text-sm font-semibold opacity-0 group-hover:opacity-100">
-                                  +
-                                </span>
-                              </Link>
+                                {eff.price != null ? (
+                                  <span
+                                    className={`tabular-nums ${
+                                      eff.isOverride
+                                        ? "font-bold text-[#0F172A]"
+                                        : "font-medium text-[#475569]"
+                                    }`}
+                                  >
+                                    {formatPriceCompact(eff.price)}
+                                  </span>
+                                ) : (
+                                  <span className="font-semibold text-[#CBD5E1] opacity-0 group-hover:opacity-100">
+                                    +
+                                  </span>
+                                )}
+                                {eff.isOverride ? (
+                                  <span className="absolute right-0.5 top-0.5 h-1 w-1 rounded-full bg-[var(--finance-blue)]" />
+                                ) : null}
+                              </button>
                             );
                           })}
                         </div>
@@ -603,6 +762,35 @@ export function DashboardView({
                   if (hoverTimer.current) clearTimeout(hoverTimer.current);
                 }}
                 onMouseLeave={hidePopoverSoon}
+              />
+            ) : null}
+
+            {priceSel && pricePopoverPos && priceSelProperty ? (
+              <PriceEditPopover
+                property={priceSelProperty}
+                selection={priceSel}
+                basePrice={data.dayPrices.basePriceByProperty[priceSel.propertyId] ?? null}
+                effective={effectivePrice(
+                  data.dayPrices,
+                  priceSel.propertyId,
+                  priceSel.from,
+                )}
+                value={priceInput}
+                onChange={setPriceInput}
+                onApply={() => {
+                  const n = Number(priceInput.replace(/\s/g, "").replace(",", "."));
+                  if (!Number.isFinite(n) || n < 0) {
+                    setPriceError("Введите цену не меньше 0");
+                    return;
+                  }
+                  void savePrice(Math.round(n));
+                }}
+                onReset={() => void savePrice(null)}
+                onClose={closePricePopover}
+                saving={priceSaving}
+                error={priceError}
+                createBookingHref={`/crm/bookings/new?propertyId=${priceSel.propertyId}&checkIn=${priceSel.from}&returnTo=${calendarReturnTo}`}
+                style={{ top: pricePopoverPos.top, left: pricePopoverPos.left }}
               />
             ) : null}
           </div>
@@ -820,6 +1008,122 @@ function BookingPopover({
         className="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg bg-[var(--finance-blue)] text-[12px] font-semibold text-white hover:brightness-95"
       >
         Открыть бронь
+      </Link>
+    </div>
+  );
+}
+
+function PriceEditPopover({
+  property,
+  selection,
+  basePrice,
+  effective,
+  value,
+  onChange,
+  onApply,
+  onReset,
+  onClose,
+  saving,
+  error,
+  createBookingHref,
+  style,
+}: {
+  property: PropertyDTO;
+  selection: { from: string; to: string };
+  basePrice: number | null;
+  effective: { price: number | null; isOverride: boolean };
+  value: string;
+  onChange: (value: string) => void;
+  onApply: () => void;
+  onReset: () => void;
+  onClose: () => void;
+  saving: boolean;
+  error: string | null;
+  createBookingHref: string;
+  style: CSSProperties;
+}) {
+  const single = selection.from === selection.to;
+  const daysCount = nightsBetween(selection.from, selection.to) + 1;
+  const rangeLabel = single
+    ? formatDate(selection.from)
+    : `${formatDate(selection.from)} — ${formatDate(selection.to)}`;
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Изменить цену за сутки"
+      className="absolute z-50 w-[248px] rounded-xl border border-[#E6ECF2] bg-white p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.14)]"
+      style={style}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 truncate text-[13px] font-bold text-[#0F172A]" title={property.name}>
+          {property.name}
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="-mr-1 -mt-1 shrink-0 rounded-md px-1.5 text-[16px] leading-none text-[#94A3B8] hover:bg-[#F1F5F9]"
+        >
+          ×
+        </button>
+      </div>
+      <p className="mt-0.5 text-[11px] text-[#64748B]">
+        {rangeLabel} · {daysCount} дн.
+      </p>
+
+      <label className="mt-2.5 block text-[12px]">
+        <span className="mb-1 block text-[#64748B]">Цена за сутки, ₽</span>
+        <input
+          type="number"
+          min={0}
+          step={100}
+          autoFocus
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onApply();
+          }}
+          placeholder={basePrice != null ? String(basePrice) : "Не задана"}
+          className="h-9 w-full rounded-lg border border-[#DFE6F0] px-2.5 text-[13px] text-[#0F172A] outline-none focus:border-[var(--finance-blue)]"
+        />
+      </label>
+
+      <p className="mt-1 text-[11px] text-[#94A3B8]">
+        Базовая: {basePrice != null ? formatMoney(basePrice) : "не задана"}
+        {single && effective.isOverride ? " · сейчас переопределена" : ""}
+      </p>
+
+      {error ? <p className="mt-1.5 text-[11px] text-red-600">{error}</p> : null}
+
+      <div className="mt-2.5 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={saving}
+          className="inline-flex h-8 flex-1 items-center justify-center rounded-lg bg-[var(--finance-blue)] text-[12px] font-semibold text-white hover:brightness-95 disabled:opacity-60"
+        >
+          {saving ? "Сохранение…" : "Применить"}
+        </button>
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={saving}
+          title="Убрать переопределение и вернуть базовую цену"
+          className="inline-flex h-8 items-center justify-center rounded-lg border border-[#DFE6F0] px-2.5 text-[12px] font-medium text-[#0F172A] hover:bg-[var(--finance-hover)] disabled:opacity-60"
+        >
+          Сбросить
+        </button>
+      </div>
+
+      <Link
+        href={createBookingHref}
+        className="mt-2 inline-flex text-[11px] font-medium text-[var(--finance-blue)] hover:underline"
+      >
+        Создать бронь на {formatDate(selection.from)} →
       </Link>
     </div>
   );

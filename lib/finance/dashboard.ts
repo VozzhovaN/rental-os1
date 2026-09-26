@@ -72,6 +72,19 @@ export type FinanceDashboardDto = {
   };
   profitBySegment: DonutSlice[];
   expensesBySegment: DonutSlice[];
+  /**
+   * Expenses grouped by business DIRECTION (Stage 15.0). Every operator expense
+   * lands in exactly one bucket, so the buckets always reconcile to totalExpenses
+   * (no expense silently disappears from the chart).
+   */
+  expensesByDirection: DonutSlice[];
+  expenseDirections: {
+    shortTerm: number;
+    longTerm: number;
+    general: number;
+    unallocated: number;
+    total: number;
+  };
   expenseCategories: DonutSlice[];
   lossMakingItems: Array<{
     id: string;
@@ -227,6 +240,37 @@ export function classifyExpenseSegment(row: {
   return "GENERAL";
 }
 
+export type ExpenseDirection =
+  | "SHORT_TERM"
+  | "LONG_TERM"
+  | "GENERAL"
+  | "UNALLOCATED";
+
+/**
+ * Attribute an operator expense to a business DIRECTION (Stage 15.0).
+ *
+ * Uses only reliable signals and never guesses:
+ * - SHORT_TERM   → expense is tied to a booking (short-term contour).
+ * - LONG_TERM    → expense is tied to a long-term contract.
+ * - GENERAL      → operator-wide expense with no property attached
+ *                  (genuinely common, not bound to a single direction).
+ * - UNALLOCATED  → expense references a property but has no reliable link
+ *                  to a booking or a long-term contract, so the direction
+ *                  cannot be determined (a property may participate in
+ *                  several contours). We surface it as "Не распределено"
+ *                  instead of silently dropping it or force-guessing GENERAL.
+ */
+export function classifyExpenseDirection(row: {
+  propertyId: string | null;
+  bookingId: string | null;
+  longTermContractId: string | null;
+}): ExpenseDirection {
+  if (row.bookingId) return "SHORT_TERM";
+  if (row.longTermContractId) return "LONG_TERM";
+  if (row.propertyId == null) return "GENERAL";
+  return "UNALLOCATED";
+}
+
 async function loadOperatorExpenses(filters: {
   dateFrom: string;
   dateTo: string;
@@ -326,6 +370,26 @@ export async function getFinanceDashboard(
     { id: "GENERAL", label: "Общие расходы", amount: current.generalExpenses },
   ]);
 
+  // Stage 15.0: expenses grouped by direction. Only non-zero sectors are shown;
+  // the four buckets reconcile exactly to expenseDirections.total.
+  const expenseDirections = {
+    shortTerm: current.directionMap.SHORT_TERM,
+    longTerm: current.directionMap.LONG_TERM,
+    general: current.directionMap.GENERAL,
+    unallocated: current.directionMap.UNALLOCATED,
+    total:
+      current.directionMap.SHORT_TERM +
+      current.directionMap.LONG_TERM +
+      current.directionMap.GENERAL +
+      current.directionMap.UNALLOCATED,
+  };
+  const expensesByDirection = toSlices([
+    { id: "SHORT_TERM", label: "Посуточная аренда", amount: expenseDirections.shortTerm },
+    { id: "LONG_TERM", label: "Долгосрочная аренда", amount: expenseDirections.longTerm },
+    { id: "GENERAL", label: "Общие расходы", amount: expenseDirections.general },
+    { id: "UNALLOCATED", label: "Не распределено", amount: expenseDirections.unallocated },
+  ]);
+
   const expenseCategories = toSlices(
     Object.entries(current.categoryMap).map(([cat, amount]) => ({
       id: cat,
@@ -413,6 +477,8 @@ export async function getFinanceDashboard(
     },
     profitBySegment,
     expensesBySegment,
+    expensesByDirection,
+    expenseDirections,
     expenseCategories,
     lossMakingItems: current.losses,
     timeline: timeline.points,
@@ -508,6 +574,20 @@ async function aggregateDashboard(
         }
       }
     }
+  }
+
+  // Stage 15.0: direction breakdown. Computed over the full scoped expense
+  // list (independent of the ST/LT segment filter) so that every expense is
+  // attributed to exactly one bucket and the four buckets always reconcile to
+  // the total expenses for the period — no expense can silently disappear.
+  const directionMap: Record<ExpenseDirection, number> = {
+    SHORT_TERM: 0,
+    LONG_TERM: 0,
+    GENERAL: 0,
+    UNALLOCATED: 0,
+  };
+  for (const e of scopedExpenses) {
+    directionMap[classifyExpenseDirection(e)] += e.amount;
   }
 
   let grossRent = 0;
@@ -626,6 +706,7 @@ async function aggregateDashboard(
     stExpenses,
     ltExpenses,
     generalExpenses: segment === "ALL" ? generalExpenses : 0,
+    directionMap,
     categoryMap,
     propertyRows: propertyRows.sort((a, b) => b.netProfit - a.netProfit),
     losses,

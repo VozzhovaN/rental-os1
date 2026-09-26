@@ -147,6 +147,11 @@ describe("property photo storage", () => {
     assert.throws(() => assertSafeStorageKey("properties/../.env"), /storageKey/);
     assert.throws(() => assertSafeStorageKey("C:/Windows/system32"), /storageKey/);
     assert.throws(() => assertSafeStorageKey("properties/id/../../../etc/passwd"), /storageKey/);
+    assert.throws(() => assertSafeStorageKey("demo/properties/../.env"), /storageKey/);
+    assert.equal(
+      assertSafeStorageKey("demo/properties/demo-morskoy-vid/01-cover.jpg"),
+      "demo/properties/demo-morskoy-vid/01-cover.jpg",
+    );
   });
 
   it("set cover, reorder, reject foreign ids; delete cover promotes next", async () => {

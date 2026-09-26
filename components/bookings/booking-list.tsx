@@ -134,7 +134,7 @@ function CoverThumb({
       <img
         src={url}
         alt=""
-        className="h-9 w-12 shrink-0 rounded-md object-cover"
+        className="h-9 w-12 max-w-none shrink-0 rounded-md object-cover"
       />
     );
   }

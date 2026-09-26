@@ -76,11 +76,12 @@ export default async function FinanceExpensesPage({
             emptyPlaceholder
           />
           <DonutChart
-            slices={dashboard.expensesBySegment}
-            centerLabel="Сегменты"
-            centerValue={formatMoney(dashboard.summary.totalExpenses)}
-            title="Расходы по сегментам"
+            slices={dashboard.expensesByDirection}
+            centerLabel="Расходы"
+            centerValue={formatMoney(dashboard.expenseDirections.total)}
+            title="Расходы по направлениям"
             colorForSlice={expenseSliceColor}
+            emptyMessage="Нет расходов за выбранный период"
             emptyPlaceholder
           />
         </div>

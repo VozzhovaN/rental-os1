@@ -146,7 +146,9 @@ export {
   getFinanceDashboardDrilldown,
   getPropertyExpenseCategoriesDrilldown,
   classifyExpenseSegment,
+  classifyExpenseDirection,
 } from "@/lib/finance/dashboard";
+export type { ExpenseDirection } from "@/lib/finance/dashboard";
 export type { FinanceDashboardDto, DonutSlice } from "@/lib/finance/dashboard";
 export {
   financeDashboardQuerySchema,

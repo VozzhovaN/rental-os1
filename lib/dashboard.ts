@@ -5,7 +5,8 @@ import {
   serializeBooking,
   type BookingDTO,
 } from "@/lib/bookings";
-import { parseDateOnly, startOfNextUtcMonth, startOfUtcDay, startOfUtcMonth } from "@/lib/format";
+import { addUtcDays, parseDateOnly, startOfNextUtcMonth, startOfUtcDay, startOfUtcMonth } from "@/lib/format";
+import { getDayPriceData, type DayPriceData } from "@/lib/pricing/day-prices";
 import { prisma } from "@/lib/prisma";
 import { serializeProperty, type PropertyDTO } from "@/lib/properties";
 import { PROPERTY_TYPES } from "@/lib/validations/property";
@@ -63,6 +64,8 @@ export type DashboardData = {
   bookings: BookingDTO[];
   checkIns: BookingDTO[];
   checkOuts: BookingDTO[];
+  /** Nightly price overrides + base prices for the visible month. */
+  dayPrices: DayPriceData;
 };
 
 function isPropertyType(value: string): value is PropertyType {
@@ -301,6 +304,12 @@ export async function getDashboardData(filters: DashboardFilters): Promise<Dashb
   const checkIns = checkInRecords.map(serializeBooking);
   const checkOuts = checkOutRecords.map(serializeBooking);
 
+  const dayPrices = await getDayPriceData({
+    propertyIds,
+    dateFrom: monthStart.toISOString().slice(0, 10),
+    dateTo: addUtcDays(monthEnd, -1).toISOString().slice(0, 10),
+  });
+
   return {
     stats: {
       properties: activePropertyCount,
@@ -320,5 +329,6 @@ export async function getDashboardData(filters: DashboardFilters): Promise<Dashb
     bookings: serializedBookings,
     checkIns,
     checkOuts,
+    dayPrices,
   };
 }

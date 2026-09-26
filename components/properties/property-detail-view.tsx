@@ -25,6 +25,7 @@ import {
   propertyTypeLabels,
 } from "@/lib/property-labels";
 import { saleListingStatusLabels } from "@/lib/sale-listing-labels";
+import { PropertyPresentationActions } from "@/components/properties/property-presentation-actions";
 
 export type PropertyDetailBooking = {
   id: string;
@@ -356,12 +357,10 @@ export function PropertyDetailView({
               <IconPlus size={16} />
               Новая бронь
             </Link>
-            <Link
-              href={`/crm/presentations/new?propertyId=${property.id}&kind=SHORT_TERM`}
-              className="inline-flex rounded-xl border border-[var(--finance-border)] bg-white px-3.5 py-2 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
-            >
-              Создать презентацию
-            </Link>
+            <PropertyPresentationActions
+              propertyId={property.id}
+              propertyName={property.name}
+            />
             <HeaderMenu
               propertyId={property.id}
               longTermId={longTerm?.id ?? null}

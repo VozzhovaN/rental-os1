@@ -429,11 +429,11 @@ export function LongTermList({
                       switch (col.id) {
                         case "photo":
                           return (
-                            <td key={col.id} className="px-3 py-3">
+                            <td key={col.id} className="w-[10.5rem] min-w-[10.5rem] px-3 py-3">
                               <button
                                 type="button"
                                 onClick={() => openGallery(listing)}
-                                className="block overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-left"
+                                className="block h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-left sm:h-28 sm:w-40"
                                 title="Открыть фото объекта"
                               >
                                 {cover ? (
@@ -441,10 +441,10 @@ export function LongTermList({
                                   <img
                                     src={cover}
                                     alt=""
-                                    className="h-24 w-32 object-cover sm:h-28 sm:w-40"
+                                    className="h-full w-full max-w-none object-cover"
                                   />
                                 ) : (
-                                  <span className="flex h-24 w-32 items-center justify-center text-zinc-400 sm:h-28 sm:w-40">
+                                  <span className="flex h-full w-full items-center justify-center text-zinc-400">
                                     <IconBuilding size={28} />
                                   </span>
                                 )}

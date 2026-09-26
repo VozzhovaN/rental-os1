@@ -20,7 +20,8 @@ function assertSafePropertyId(propertyId: string) {
 }
 
 /**
- * Validate storageKey: must be properties/{id}/{uuid}.{ext} with no traversal.
+ * Validate storageKey: must be properties/{id}/{uuid}.{ext} or
+ * demo/properties/{slug}/{file}.{ext} (course-demo assets) with no traversal.
  */
 export function assertSafeStorageKey(storageKey: string): string {
   const normalized = storageKey.replace(/\\/g, "/").replace(/^\/+/, "");
@@ -28,7 +29,9 @@ export function assertSafeStorageKey(storageKey: string): string {
     normalized.includes("..") ||
     normalized.includes("\0") ||
     path.isAbsolute(normalized) ||
-    !/^properties\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+\.(jpe?g|png|webp)$/i.test(normalized)
+    !/^(?:demo\/)?properties\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+\.(jpe?g|png|webp)$/i.test(
+      normalized,
+    )
   ) {
     throw new Error("Некорректный storageKey");
   }

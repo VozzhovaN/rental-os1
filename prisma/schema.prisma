@@ -31,58 +31,78 @@ enum RentCollectionMode {
 }
 
 model Property {
-  id                 String           @id @default(cuid())
-  name               String
-  slug               String           @unique
-  type               PropertyType
-  status             PropertyStatus   @default(ACTIVE)
-  address            String
-  city               String
-  district           String
-  area               Float
-  rooms              Int
-  bedrooms           Int
-  bathrooms          Int
-  floor              Int?
-  totalFloors        Int?
-  guests             Int
-  description        String
-  shortDescription   String
+  id                    String                  @id @default(cuid())
+  name                  String
+  slug                  String                  @unique
+  type                  PropertyType
+  status                PropertyStatus          @default(ACTIVE)
+  address               String
+  city                  String
+  district              String
+  area                  Float
+  rooms                 Int
+  bedrooms              Int
+  bathrooms             Int
+  floor                 Int?
+  totalFloors           Int?
+  guests                Int
+  description           String
+  shortDescription      String
   /// Legacy free-text owner label. Prefer ownerId for COMMISSION settlements.
-  ownerName          String
-  ownerPhone         String
+  ownerName             String
+  ownerPhone            String
   /// Structured owner for COMMISSION properties. Null for OWN (no external owner debt).
-  ownerId            String?
-  managementType     ManagementType
+  ownerId               String?
+  managementType        ManagementType
   /// Who collects rent from guests/tenants. OWN must use OPERATOR.
-  rentCollectionMode RentCollectionMode   @default(OPERATOR)
-  dailyPrice         Int?
+  rentCollectionMode    RentCollectionMode      @default(OPERATOR)
+  dailyPrice            Int?
   /// Ориентир экономики объекта. Не источник истины для долгосрочной аренды
   /// (см. LongTermListing.monthlyPrice). Поля не синхронизируются.
-  monthlyPrice       Int?
+  monthlyPrice          Int?
   /// Комиссия в процентах, например 15 = 15%
-  commissionDaily    Float?
+  commissionDaily       Float?
   /// Комиссия в процентах, например 20 = 20%
-  commissionMonthly  Float?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  channelListings    ChannelListing[]
-  bookings           Booking[]
-  photos             PropertyPhoto[]
-  longTermListing    LongTermListing?
-  saleListing        SaleListing?
+  commissionMonthly     Float?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  channelListings       ChannelListing[]
+  bookings              Booking[]
+  photos                PropertyPhoto[]
+  longTermListing       LongTermListing?
+  saleListing           SaleListing?
   financialTransactions FinancialTransaction[]
-  longTermContracts  LongTermContract[]
-  owner              Owner?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  payoutAllocations  OwnerPayoutAllocation[]
-  commissionPayments CommissionPayment[]
-  presentationItems  PresentationItem[]
+  longTermContracts     LongTermContract[]
+  owner                 Owner?                  @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  payoutAllocations     OwnerPayoutAllocation[]
+  commissionPayments    CommissionPayment[]
+  presentationItems     PresentationItem[]
+  dayPrices             PropertyDayPrice[]
 
   @@index([status])
   @@index([city])
   @@index([type])
   @@index([managementType])
   @@index([ownerId])
+}
+
+/// Ручной override суточной цены объекта на конкретную дату (посуточная аренда).
+/// Тариф для отображения/планирования в календаре занятости. НЕ пересчитывает
+/// Booking.totalAmount (он остаётся источником истины) и не влияет на финансовые
+/// формулы. Базовая цена без override — Property.dailyPrice.
+model PropertyDayPrice {
+  id         String   @id @default(cuid())
+  propertyId String
+  /// Календарные сутки в UTC (00:00:00Z). Уникальны в паре с объектом.
+  date       DateTime
+  /// Цена за сутки, целые рубли (>= 0).
+  price      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, date])
+  @@index([propertyId, date])
 }
 
 enum ChannelListingStatus {
@@ -99,34 +119,34 @@ enum ChannelSyncStatus {
 }
 
 model SalesChannel {
-  id        String           @id @default(cuid())
-  code      String           @unique
-  name      String
-  isActive  Boolean          @default(true)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  listings           ChannelListing[]
-  bookings           Booking[]
-  connections        IntegrationConnection[]
-  externalBookings   ExternalBooking[]
-  publications       Publication[]
-  salePublications   SalePublication[]
+  id               String                  @id @default(cuid())
+  code             String                  @unique
+  name             String
+  isActive         Boolean                 @default(true)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  listings         ChannelListing[]
+  bookings         Booking[]
+  connections      IntegrationConnection[]
+  externalBookings ExternalBooking[]
+  publications     Publication[]
+  salePublications SalePublication[]
 }
 
 model ChannelListing {
-  id             String                @id @default(cuid())
+  id             String               @id @default(cuid())
   propertyId     String
   salesChannelId String
   externalId     String
   externalUrl    String?
-  status         ChannelListingStatus  @default(ACTIVE)
-  syncStatus     ChannelSyncStatus     @default(CONNECTED)
+  status         ChannelListingStatus @default(ACTIVE)
+  syncStatus     ChannelSyncStatus    @default(CONNECTED)
   lastSyncAt     DateTime?
   syncError      String?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  property       Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  salesChannel   SalesChannel          @relation(fields: [salesChannelId], references: [id])
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  property       Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  salesChannel   SalesChannel         @relation(fields: [salesChannelId], references: [id])
   bookings       Booking[]
 
   @@unique([propertyId, salesChannelId])
@@ -159,7 +179,7 @@ enum BookingStatus {
 }
 
 model Guest {
-  id                String         @id @default(cuid())
+  id                String             @id @default(cuid())
   firstName         String
   lastName          String?
   middleName        String?
@@ -168,8 +188,8 @@ model Guest {
   messengerType     MessengerType?
   messengerContact  String?
   comment           String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   bookings          Booking[]
   history           GuestHistory[]
   longTermContracts LongTermContract[]
@@ -188,30 +208,30 @@ model GuestHistory {
 }
 
 model Booking {
-  id               String          @id @default(cuid())
-  propertyId       String
-  guestId          String
-  salesChannelId   String
-  channelListingId String?
-  checkIn          DateTime
-  checkOut         DateTime
-  guestsCount      Int
+  id                    String                 @id @default(cuid())
+  propertyId            String
+  guestId               String
+  salesChannelId        String
+  channelListingId      String?
+  checkIn               DateTime
+  checkOut              DateTime
+  guestsCount           Int
   /// Gross guest stay price (integer RUB). Source of truth — not recalculated from dailyPrice.
-  totalAmount      Int
+  totalAmount           Int
   /// Locked commission rate in basis points (10000 = 100%). Set at first finance lock; immutable after.
-  commissionRateBps Int?
-  status           BookingStatus   @default(PENDING)
-  comment          String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  property         Property        @relation(fields: [propertyId], references: [id])
-  guest            Guest           @relation(fields: [guestId], references: [id])
-  salesChannel     SalesChannel    @relation(fields: [salesChannelId], references: [id])
-  channelListing   ChannelListing? @relation(fields: [channelListingId], references: [id], onDelete: SetNull)
-  externalBookings ExternalBooking[]
+  commissionRateBps     Int?
+  status                BookingStatus          @default(PENDING)
+  comment               String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  property              Property               @relation(fields: [propertyId], references: [id])
+  guest                 Guest                  @relation(fields: [guestId], references: [id])
+  salesChannel          SalesChannel           @relation(fields: [salesChannelId], references: [id])
+  channelListing        ChannelListing?        @relation(fields: [channelListingId], references: [id], onDelete: SetNull)
+  externalBookings      ExternalBooking[]
   financialTransactions FinancialTransaction[]
-  payments         BookingPayment[]
-  commissionPayments CommissionPayment[]
+  payments              BookingPayment[]
+  commissionPayments    CommissionPayment[]
 
   @@index([propertyId])
   @@index([guestId])
@@ -238,14 +258,14 @@ model BookingPayment {
 
 /// Guest refund against a specific BookingPayment. Does not delete the original payment.
 model BookingPaymentRefund {
-  id        String         @id @default(cuid())
-  paymentId String
+  id         String         @id @default(cuid())
+  paymentId  String
   /// Always > 0. Integer RUB. Cumulative refunds per payment cannot exceed payment.amount.
-  amount    Int
+  amount     Int
   refundedAt DateTime
-  note      String?
-  createdAt DateTime       @default(now())
-  payment   BookingPayment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  note       String?
+  createdAt  DateTime       @default(now())
+  payment    BookingPayment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
 
   @@index([paymentId, refundedAt])
 }
@@ -278,11 +298,11 @@ enum SyncLogStatus {
 }
 
 model IntegrationConnection {
-  id                String             @id @default(cuid())
-  salesChannelId    String             @unique
-  salesChannel      SalesChannel       @relation(fields: [salesChannelId], references: [id])
+  id                String               @id @default(cuid())
+  salesChannelId    String               @unique
+  salesChannel      SalesChannel         @relation(fields: [salesChannelId], references: [id])
   providerAccountId String?
-  status            IntegrationStatus  @default(DISCONNECTED)
+  status            IntegrationStatus    @default(DISCONNECTED)
   accessToken       String?
   refreshToken      String?
   tokenExpiresAt    DateTime?
@@ -290,15 +310,15 @@ model IntegrationConnection {
   lastSuccessAt     DateTime?
   lastErrorAt       DateTime?
   lastError         String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
   logs              IntegrationSyncLog[]
 }
 
 model IntegrationSyncLog {
-  id           String                 @id @default(cuid())
+  id           String                @id @default(cuid())
   connectionId String
-  connection   IntegrationConnection  @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  connection   IntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   direction    SyncDirection
   entityType   SyncEntityType
   status       SyncLogStatus
@@ -308,7 +328,7 @@ model IntegrationSyncLog {
   errorCode    String?
   errorMessage String?
   metadata     Json?
-  createdAt    DateTime               @default(now())
+  createdAt    DateTime              @default(now())
 
   @@index([connectionId, createdAt])
   @@index([status])
@@ -340,26 +360,26 @@ enum LongTermListingStatus {
 
 /// Общий пул фотографий объекта. LongTermListingPhoto / SaleListingPhoto только ссылаются сюда.
 model PropertyPhoto {
-  id               String                 @id @default(cuid())
-  propertyId       String
+  id                 String                  @id @default(cuid())
+  propertyId         String
   /// CRM / local preview URL (legacy external URL или /api/.../file). Не считается public HTTPS для CIAN.
-  url              String
+  url                String
   /// Relative key inside PhotoStorage (null for legacy URL-only rows).
-  storageKey       String?
-  originalFileName String?
-  mimeType         String?
-  sizeBytes        Int?
-  width            Int?
-  height           Int?
-  caption          String?
-  sortOrder        Int                    @default(0)
-  isCover          Boolean                @default(false)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  property         Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  longTermUsages   LongTermListingPhoto[]
-  saleUsages       SaleListingPhoto[]
-  presentationCovers PresentationItem[]   @relation("PresentationItemCover")
+  storageKey         String?
+  originalFileName   String?
+  mimeType           String?
+  sizeBytes          Int?
+  width              Int?
+  height             Int?
+  caption            String?
+  sortOrder          Int                     @default(0)
+  isCover            Boolean                 @default(false)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  property           Property                @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  longTermUsages     LongTermListingPhoto[]
+  saleUsages         SaleListingPhoto[]
+  presentationCovers PresentationItem[]      @relation("PresentationItemCover")
   presentationUsages PresentationItemPhoto[]
 
   @@index([propertyId, sortOrder])
@@ -433,24 +453,24 @@ enum PublicationStatus {
 /// Размещение LongTermListing на одном SalesChannel.
 /// Не ChannelListing: ChannelListing остаётся short-term.
 model Publication {
-  id                String             @id @default(cuid())
-  longTermListingId String
-  salesChannelId    String
-  status            PublicationStatus  @default(NOT_PUBLISHED)
+  id                 String            @id @default(cuid())
+  longTermListingId  String
+  salesChannelId     String
+  status             PublicationStatus @default(NOT_PUBLISHED)
   /// Provider-specific id. NULL до первой успешной публикации.
-  externalId        String?
+  externalId         String?
   /// Сырой статус провайдера, без общего enum.
-  externalStatus    String?
-  lastSyncAt        DateTime?
-  lastSuccessAt     DateTime?
-  lastErrorAt       DateTime?
-  lastError         String?
+  externalStatus     String?
+  lastSyncAt         DateTime?
+  lastSuccessAt      DateTime?
+  lastErrorAt        DateTime?
+  lastError          String?
   /// SHA-256 of last provider payload used for update detection. NULL until first serialize/prepare.
   lastSerializedHash String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  listing           LongTermListing    @relation(fields: [longTermListingId], references: [id], onDelete: Cascade)
-  salesChannel      SalesChannel       @relation(fields: [salesChannelId], references: [id])
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  listing            LongTermListing   @relation(fields: [longTermListingId], references: [id], onDelete: Cascade)
+  salesChannel       SalesChannel      @relation(fields: [salesChannelId], references: [id])
 
   @@unique([longTermListingId, salesChannelId])
   @@index([salesChannelId])
@@ -468,20 +488,20 @@ enum SaleListingStatus {
 
 /// Маркетинговая/бизнес-карточка продажи. Физические факты остаются на Property.
 model SaleListing {
-  id                String            @id @default(cuid())
-  propertyId        String            @unique
-  status            SaleListingStatus @default(DRAFT)
+  id                          String             @id @default(cuid())
+  propertyId                  String             @unique
+  status                      SaleListingStatus  @default(DRAFT)
   /// Цена продажи, рубли. Не Property.dailyPrice / monthlyPrice / LongTermListing.monthlyPrice.
-  price             Int               @default(0)
-  marketingTitle    String?
-  description       String?
-  specialOfferPrice Int?
-  specialOfferText  String?
-  advantages        String?
-  infrastructure    String?
-  security          String?
-  parking           String?
-  transport         String?
+  price                       Int                @default(0)
+  marketingTitle              String?
+  description                 String?
+  specialOfferPrice           Int?
+  specialOfferText            String?
+  advantages                  String?
+  infrastructure              String?
+  security                    String?
+  parking                     String?
+  transport                   String?
   /// Контакт для внешней публикации продажи. Не Buyer, не owner, не LongTermListing contact.
   publicationContactName      String?
   /// Телефонный код страны цифрами, без +. Например 7.
@@ -494,12 +514,12 @@ model SaleListing {
   crmOwnerPhone               String?
   /// CRM-only: внутренняя заметка. Не Property.description и не marketing description.
   crmComment                  String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  property          Property          @relation(fields: [propertyId], references: [id])
-  photos            SaleListingPhoto[]
-  buyerInterests    BuyerInterest[]
-  publications      SalePublication[]
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
+  property                    Property           @relation(fields: [propertyId], references: [id])
+  photos                      SaleListingPhoto[]
+  buyerInterests              BuyerInterest[]
+  publications                SalePublication[]
 
   @@index([status])
 }
@@ -533,11 +553,11 @@ model SalePublication {
 
 /// Привязка существующего PropertyPhoto к SaleListing. Не хранит файлы.
 model SaleListingPhoto {
-  id              String       @id @default(cuid())
+  id              String        @id @default(cuid())
   saleListingId   String
   propertyPhotoId String
-  order           Int          @default(0)
-  saleListing     SaleListing  @relation(fields: [saleListingId], references: [id], onDelete: Cascade)
+  order           Int           @default(0)
+  saleListing     SaleListing   @relation(fields: [saleListingId], references: [id], onDelete: Cascade)
   propertyPhoto   PropertyPhoto @relation(fields: [propertyPhotoId], references: [id], onDelete: Cascade)
 
   @@unique([saleListingId, propertyPhotoId])
@@ -546,15 +566,15 @@ model SaleListingPhoto {
 
 /// Клиент контура продажи. Не Guest (short-term).
 model Buyer {
-  id               String           @id @default(cuid())
+  id               String          @id @default(cuid())
   name             String
   phone            String?
   email            String?
   messengerType    MessengerType?
   messengerContact String?
   notes            String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   interests        BuyerInterest[]
   history          BuyerHistory[]
 
@@ -693,15 +713,15 @@ model User {
 
 /// Server-side session. DB stores token hash only — never raw cookie token.
 model Session {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
   userAgent  String?
   ipHash     String?
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -772,17 +792,17 @@ enum ExpenseResponsibility {
 
 /// Structured property owner for COMMISSION settlements. Not used for OWN properties.
 model Owner {
-  id        String    @id @default(cuid())
-  name      String
-  phone     String?
-  email     String?
-  notes     String?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  properties Property[]
-  payouts   OwnerPayout[]
-  settlements OwnerSettlement[]
+  id                    String                 @id @default(cuid())
+  name                  String
+  phone                 String?
+  email                 String?
+  notes                 String?
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  properties            Property[]
+  payouts               OwnerPayout[]
+  settlements           OwnerSettlement[]
   financialTransactions FinancialTransaction[]
 
   @@index([isActive])
@@ -812,14 +832,14 @@ model OwnerSettlement {
 
 /// Cash paid to an external owner (one bank/cash transfer).
 model OwnerPayout {
-  id        String                 @id @default(cuid())
-  ownerId   String
-  amount    Int
-  paidAt    DateTime
-  method    String?
-  note      String?
-  createdAt DateTime               @default(now())
-  owner     Owner                  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  id          String                  @id @default(cuid())
+  ownerId     String
+  amount      Int
+  paidAt      DateTime
+  method      String?
+  note        String?
+  createdAt   DateTime                @default(now())
+  owner       Owner                   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   allocations OwnerPayoutAllocation[]
 
   @@index([ownerId, paidAt])
@@ -862,34 +882,34 @@ model CommissionPayment {
 /// Immutable financial ledger. Amount is always positive integer RUB (major units),
 /// matching Booking.totalAmount / Property.dailyPrice conventions — not floating point.
 model FinancialTransaction {
-  id                  String                    @id @default(cuid())
-  propertyId          String?
-  bookingId           String?
-  longTermListingId   String?
-  longTermContractId  String?
-  ownerId             String?
-  type                FinancialTransactionType
-  category            FinancialCategory
+  id                    String                   @id @default(cuid())
+  propertyId            String?
+  bookingId             String?
+  longTermListingId     String?
+  longTermContractId    String?
+  ownerId               String?
+  type                  FinancialTransactionType
+  category              FinancialCategory
   /// Always > 0. Direction comes from type (+ adjustmentDirection for ADJUSTMENT).
-  amount              Int
-  currency            FinancialCurrency         @default(RUB)
-  adjustmentDirection AdjustmentDirection?
+  amount                Int
+  currency              FinancialCurrency        @default(RUB)
+  adjustmentDirection   AdjustmentDirection?
   /// For EXPENSE: OPERATOR (default/legacy) or OWNER (reduces owner payable).
   expenseResponsibility ExpenseResponsibility?
   /// Economic classification for unit/business P&L (Stage 12.4).
-  economicRole        EconomicRole?
-  occurredAt          DateTime
-  description         String?
-  sourceType          FinancialSourceType
-  sourceId            String?
+  economicRole          EconomicRole?
+  occurredAt            DateTime
+  description           String?
+  sourceType            FinancialSourceType
+  sourceId              String?
   /// Stable idempotency key, e.g. BOOKING:{id}:RENT. Null for one-off manual entries.
-  sourceKey           String?                   @unique
-  createdAt           DateTime                  @default(now())
-  property            Property?                 @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  booking             Booking?                  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  longTermListing     LongTermListing?          @relation(fields: [longTermListingId], references: [id], onDelete: SetNull)
-  longTermContract    LongTermContract?         @relation(fields: [longTermContractId], references: [id], onDelete: SetNull)
-  owner               Owner?                    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  sourceKey             String?                  @unique
+  createdAt             DateTime                 @default(now())
+  property              Property?                @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  booking               Booking?                 @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  longTermListing       LongTermListing?         @relation(fields: [longTermListingId], references: [id], onDelete: SetNull)
+  longTermContract      LongTermContract?        @relation(fields: [longTermContractId], references: [id], onDelete: SetNull)
+  owner                 Owner?                   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([propertyId, occurredAt])
   @@index([type, occurredAt])
@@ -928,32 +948,32 @@ enum LongTermChargeStatus {
 
 /// Real long-term lease. Distinct from LongTermListing (marketing).
 model LongTermContract {
-  id                 String                   @id @default(cuid())
-  propertyId         String
-  longTermListingId  String?
-  guestId            String
-  status             LongTermContractStatus   @default(DRAFT)
-  startDate          DateTime
-  endDate            DateTime?
+  id                    String                 @id @default(cuid())
+  propertyId            String
+  longTermListingId     String?
+  guestId               String
+  status                LongTermContractStatus @default(DRAFT)
+  startDate             DateTime
+  endDate               DateTime?
   /// Snapshot of monthly rent (integer RUB). Not synced from listing after create.
-  monthlyRent        Int
+  monthlyRent           Int
   /// Snapshot of security deposit (integer RUB). Not rent; not commission base.
-  depositAmount      Int                      @default(0)
+  depositAmount         Int                    @default(0)
   /// Snapshot from Property.commissionMonthly at create/activate. 10000 = 100%.
-  commissionRateBps  Int
+  commissionRateBps     Int
   /// Day of month rent is due (1–28).
-  paymentDay         Int
-  prorationMode      LongTermProrationMode    @default(MANUAL_FIRST_PERIOD)
-  notes              String?
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
-  property           Property                 @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  longTermListing    LongTermListing?         @relation(fields: [longTermListingId], references: [id], onDelete: SetNull)
-  guest              Guest                    @relation(fields: [guestId], references: [id], onDelete: Restrict)
-  charges            LongTermCharge[]
-  payments           LongTermPayment[]
+  paymentDay            Int
+  prorationMode         LongTermProrationMode  @default(MANUAL_FIRST_PERIOD)
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  property              Property               @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  longTermListing       LongTermListing?       @relation(fields: [longTermListingId], references: [id], onDelete: SetNull)
+  guest                 Guest                  @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  charges               LongTermCharge[]
+  payments              LongTermPayment[]
   financialTransactions FinancialTransaction[]
-  commissionPayments CommissionPayment[]
+  commissionPayments    CommissionPayment[]
 
   @@index([propertyId, status])
   @@index([guestId])
@@ -963,21 +983,21 @@ model LongTermContract {
 
 /// Accrual: what the tenant owes. Not a cash fact.
 model LongTermCharge {
-  id           String               @id @default(cuid())
-  contractId   String
-  type         LongTermChargeType
-  periodStart  DateTime?
-  periodEnd    DateTime?
-  dueDate      DateTime
-  amount       Int
-  currency     FinancialCurrency    @default(RUB)
-  status       LongTermChargeStatus @default(OPEN)
+  id          String                      @id @default(cuid())
+  contractId  String
+  type        LongTermChargeType
+  periodStart DateTime?
+  periodEnd   DateTime?
+  dueDate     DateTime
+  amount      Int
+  currency    FinancialCurrency           @default(RUB)
+  status      LongTermChargeStatus        @default(OPEN)
   /// e.g. LONG_TERM:{contractId}:RENT:2026-10 or LONG_TERM:{contractId}:DEPOSIT
-  sourceKey    String               @unique
-  description  String?
-  createdAt    DateTime             @default(now())
-  contract     LongTermContract     @relation(fields: [contractId], references: [id], onDelete: Restrict)
-  allocations  LongTermPaymentAllocation[]
+  sourceKey   String                      @unique
+  description String?
+  createdAt   DateTime                    @default(now())
+  contract    LongTermContract            @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  allocations LongTermPaymentAllocation[]
 
   @@index([contractId, dueDate])
   @@index([contractId, status])
@@ -986,14 +1006,14 @@ model LongTermCharge {
 
 /// Cash received from tenant for a long-term contract.
 model LongTermPayment {
-  id         String                      @id @default(cuid())
-  contractId String
-  amount     Int
-  paidAt     DateTime
-  method     String?
-  note       String?
-  createdAt  DateTime                    @default(now())
-  contract   LongTermContract            @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  id          String                      @id @default(cuid())
+  contractId  String
+  amount      Int
+  paidAt      DateTime
+  method      String?
+  note        String?
+  createdAt   DateTime                    @default(now())
+  contract    LongTermContract            @relation(fields: [contractId], references: [id], onDelete: Restrict)
   allocations LongTermPaymentAllocation[]
 
   @@index([contractId, paidAt])
@@ -1001,11 +1021,11 @@ model LongTermPayment {
 
 /// Links a payment to charges it covers.
 model LongTermPaymentAllocation {
-  id        String         @id @default(cuid())
+  id        String          @id @default(cuid())
   paymentId String
   chargeId  String
   amount    Int
-  createdAt DateTime       @default(now())
+  createdAt DateTime        @default(now())
   payment   LongTermPayment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   charge    LongTermCharge  @relation(fields: [chargeId], references: [id], onDelete: Restrict)
 
@@ -1043,11 +1063,11 @@ enum PresentationSectionType {
 }
 
 model Presentation {
-  id           String              @id @default(cuid())
+  id           String             @id @default(cuid())
   /// Cryptographically random public slug (>=128 bits). Never sequential.
-  publicToken  String              @unique
+  publicToken  String             @unique
   kind         PresentationKind
-  status       PresentationStatus  @default(DRAFT)
+  status       PresentationStatus @default(DRAFT)
   title        String
   subtitle     String?
   companyName  String?
@@ -1057,8 +1077,8 @@ model Presentation {
   /// CRM-only note. Never exposed on public DTO / PDF.
   internalNote String?
   publishedAt  DateTime?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
   items        PresentationItem[]
 
   @@index([status])
@@ -1067,25 +1087,25 @@ model Presentation {
 }
 
 model PresentationItem {
-  id                   String                   @id @default(cuid())
-  presentationId       String
-  propertyId           String
-  sortOrder            Int                      @default(0)
-  titleOverride        String?
+  id                  String                  @id @default(cuid())
+  presentationId      String
+  propertyId          String
+  sortOrder           Int                     @default(0)
+  titleOverride       String?
   /// Presentation-only price override in RUB. Null → resolve from Property / LT / Sale.
-  priceOverride        Int?
-  descriptionOverride  String?
+  priceOverride       Int?
+  descriptionOverride String?
   /// Selected cover PropertyPhoto. Null → PropertyPhoto.isCover / first.
-  coverPhotoId         String?
+  coverPhotoId        String?
   /// Architectural placeholder. No video storage in this stage (PROPERTY_VIDEO_STORAGE_GAP).
-  videoUrl             String?
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
-  presentation         Presentation             @relation(fields: [presentationId], references: [id], onDelete: Cascade)
-  property             Property                 @relation(fields: [propertyId], references: [id], onDelete: Restrict)
-  coverPhoto           PropertyPhoto?           @relation("PresentationItemCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
-  photos               PresentationItemPhoto[]
-  sections             PresentationSection[]
+  videoUrl            String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  presentation        Presentation            @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  property            Property                @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  coverPhoto          PropertyPhoto?          @relation("PresentationItemCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
+  photos              PresentationItemPhoto[]
+  sections            PresentationSection[]
 
   @@index([presentationId, sortOrder])
   @@index([propertyId])
@@ -1104,14 +1124,14 @@ model PresentationItemPhoto {
 }
 
 model PresentationSection {
-  id                 String                   @id @default(cuid())
+  id                 String                  @id @default(cuid())
   presentationItemId String
   type               PresentationSectionType
   title              String
-  content            String                   @default("")
-  sortOrder          Int                      @default(0)
-  isVisible          Boolean                  @default(true)
-  presentationItem   PresentationItem         @relation(fields: [presentationItemId], references: [id], onDelete: Cascade)
+  content            String                  @default("")
+  sortOrder          Int                     @default(0)
+  isVisible          Boolean                 @default(true)
+  presentationItem   PresentationItem        @relation(fields: [presentationItemId], references: [id], onDelete: Cascade)
 
   @@index([presentationItemId, sortOrder])
 }

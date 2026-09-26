@@ -152,7 +152,7 @@ export function LongTermPhotos({
                 className="flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 p-3"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.url} alt="" className="h-16 w-24 rounded object-cover bg-zinc-100" />
+                <img src={photo.url} alt="" className="h-16 w-24 max-w-none shrink-0 rounded object-cover bg-zinc-100" />
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"

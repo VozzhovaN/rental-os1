@@ -74,6 +74,7 @@ export async function resetFixtures() {
   await prisma.ownerPayoutAllocation.deleteMany();
   await prisma.ownerPayout.deleteMany();
   await prisma.ownerSettlement.deleteMany();
+  await prisma.propertyDayPrice.deleteMany();
   await prisma.property.deleteMany();
   await prisma.owner.deleteMany();
   await prisma.salesChannel.deleteMany();

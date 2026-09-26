@@ -7,7 +7,9 @@ import { classifyApiPath, ROUTE_ACCESS } from "@/lib/auth/route-access";
 import {
   FinanceDomainError,
   classifyExpenseSegment,
+  classifyExpenseDirection,
   createCommissionPayment,
+  createFinancialTransaction,
   createManualExpense,
   ensureCommissionSnapshot,
   getFinanceDashboard,
@@ -344,5 +346,203 @@ describe("finance dashboard (stage 12.5)", () => {
         }),
       FinanceDomainError,
     );
+  });
+});
+
+describe("finance dashboard — expenses by direction (stage 15.0)", () => {
+  const RANGE = { period: "custom" as const, dateFrom: "2026-09-01", dateTo: "2026-09-30" };
+
+  before(async () => {
+    await prepareTestDatabase();
+  });
+
+  afterEach(async () => {
+    await resetFixtures();
+    await prisma.session.deleteMany();
+    await prisma.user.deleteMany();
+  });
+
+  const sliceFor = (
+    dash: Awaited<ReturnType<typeof getFinanceDashboard>>,
+    id: string,
+  ) => dash.expensesByDirection.find((s) => s.id === id);
+
+  const assertReconciles = (dash: Awaited<ReturnType<typeof getFinanceDashboard>>) => {
+    const d = dash.expenseDirections;
+    // Invariant: the four buckets sum to the direction total, with no rounding error.
+    assert.equal(d.shortTerm + d.longTerm + d.general + d.unallocated, d.total);
+    // And that total equals the dashboard's total expenses (nothing disappears).
+    assert.equal(d.total, dash.summary.totalExpenses);
+    // Slice amounts (only non-zero sectors) also reconcile to the total.
+    const sliceSum = dash.expensesByDirection.reduce((s, x) => s + x.amount, 0);
+    assert.equal(sliceSum, d.total);
+  };
+
+  it("classifyExpenseDirection: reliable signals only, no guessing", () => {
+    assert.equal(
+      classifyExpenseDirection({ propertyId: "p", bookingId: "b", longTermContractId: null }),
+      "SHORT_TERM",
+    );
+    assert.equal(
+      classifyExpenseDirection({ propertyId: "p", bookingId: null, longTermContractId: "c" }),
+      "LONG_TERM",
+    );
+    assert.equal(
+      classifyExpenseDirection({ propertyId: null, bookingId: null, longTermContractId: null }),
+      "GENERAL",
+    );
+    // Property present but no booking/contract link → direction unknown → UNALLOCATED
+    assert.equal(
+      classifyExpenseDirection({ propertyId: "p", bookingId: null, longTermContractId: null }),
+      "UNALLOCATED",
+    );
+  });
+
+  it("only GENERAL: single sector 100%, reconciles", async () => {
+    await resetFixtures();
+    await createManualExpense({
+      propertyId: null,
+      amount: 4000,
+      category: "ADVERTISING",
+      occurredAt: new Date("2026-09-06T12:00:00.000Z"),
+      description: "общая реклама",
+    });
+
+    const dash = await getFinanceDashboard(RANGE);
+    assert.equal(dash.expenseDirections.general, 4000);
+    assert.equal(dash.expensesByDirection.length, 1);
+    assert.equal(sliceFor(dash, "GENERAL")?.percent, 100);
+    assertReconciles(dash);
+  });
+
+  it("only UNALLOCATED: property expense without direction link never disappears", async () => {
+    const { property } = await resetFixtures();
+    // These mirror the demo: property-level manual operator expenses with no
+    // booking/contract link. Before Stage 15.0 they vanished from the donut.
+    await createManualExpense({
+      propertyId: property.id,
+      amount: 3000,
+      category: "CLEANING",
+      occurredAt: new Date("2026-09-06T12:00:00.000Z"),
+      description: "уборка",
+    });
+    await createManualExpense({
+      propertyId: property.id,
+      amount: 6250,
+      category: "UTILITIES",
+      occurredAt: new Date("2026-09-07T12:00:00.000Z"),
+      description: "коммуналка",
+    });
+    await createManualExpense({
+      propertyId: property.id,
+      amount: 2580,
+      category: "PLATFORM_COMMISSION",
+      occurredAt: new Date("2026-09-08T12:00:00.000Z"),
+      description: "комиссия площадки",
+    });
+
+    const dash = await getFinanceDashboard(RANGE);
+    assert.equal(dash.summary.totalExpenses, 11830);
+    assert.equal(dash.expenseDirections.unallocated, 11830);
+    assert.equal(dash.expenseDirections.general, 0);
+    assert.equal(dash.expensesByDirection.length, 1);
+    assert.equal(sliceFor(dash, "UNALLOCATED")?.amount, 11830);
+    assert.equal(sliceFor(dash, "UNALLOCATED")?.percent, 100);
+    assertReconciles(dash);
+  });
+
+  it("only SHORT_TERM: booking-linked operator expense", async () => {
+    const { channel, property } = await resetFixtures();
+    const booking = await createBooking(property.id, channel.id, 5000);
+    await createFinancialTransaction({
+      propertyId: property.id,
+      bookingId: booking.id,
+      type: "EXPENSE",
+      category: "CLEANING",
+      amount: 1500,
+      economicRole: "BUSINESS_EXPENSE",
+      occurredAt: new Date("2026-09-06T12:00:00.000Z"),
+      description: "уборка после гостя",
+      sourceType: "MANUAL",
+    });
+
+    const dash = await getFinanceDashboard(RANGE);
+    assert.equal(dash.expenseDirections.shortTerm, 1500);
+    assert.equal(sliceFor(dash, "SHORT_TERM")?.amount, 1500);
+    assertReconciles(dash);
+  });
+
+  it("only LONG_TERM: contract-linked operator expense", async () => {
+    const { property } = await resetFixtures();
+    const guest = await prisma.guest.create({ data: { firstName: "L", lastName: "T" } });
+    const listing = await prisma.longTermListing.create({
+      data: {
+        propertyId: property.id,
+        status: "ACTIVE",
+        monthlyPrice: 50000,
+        deposit: 50000,
+      },
+    });
+    const contract = await prisma.longTermContract.create({
+      data: {
+        propertyId: property.id,
+        longTermListingId: listing.id,
+        guestId: guest.id,
+        status: "ACTIVE",
+        monthlyRent: 50000,
+        depositAmount: 50000,
+        commissionRateBps: 0,
+        startDate: new Date("2026-09-01T00:00:00.000Z"),
+        paymentDay: 5,
+      },
+    });
+    await createFinancialTransaction({
+      propertyId: property.id,
+      longTermContractId: contract.id,
+      type: "EXPENSE",
+      category: "REPAIR",
+      amount: 2200,
+      economicRole: "BUSINESS_EXPENSE",
+      occurredAt: new Date("2026-09-10T12:00:00.000Z"),
+      description: "ремонт по договору",
+      sourceType: "MANUAL",
+    });
+
+    const dash = await getFinanceDashboard(RANGE);
+    assert.equal(dash.expenseDirections.longTerm, 2200);
+    assert.equal(sliceFor(dash, "LONG_TERM")?.amount, 2200);
+    assertReconciles(dash);
+  });
+
+  it("mixed directions: all non-zero sectors present and reconcile", async () => {
+    const { property } = await resetFixtures();
+    await createManualExpense({
+      propertyId: null,
+      amount: 1000,
+      category: "ADVERTISING",
+      occurredAt: new Date("2026-09-06T12:00:00.000Z"),
+      description: "общая",
+    });
+    await createManualExpense({
+      propertyId: property.id,
+      amount: 3000,
+      category: "CLEANING",
+      occurredAt: new Date("2026-09-07T12:00:00.000Z"),
+      description: "уборка",
+    });
+
+    const dash = await getFinanceDashboard(RANGE);
+    assert.equal(dash.expenseDirections.general, 1000);
+    assert.equal(dash.expenseDirections.unallocated, 3000);
+    assert.equal(dash.expensesByDirection.length, 2);
+    assertReconciles(dash);
+  });
+
+  it("no expenses: empty distribution and zero total", async () => {
+    await resetFixtures();
+    const dash = await getFinanceDashboard(RANGE);
+    assert.equal(dash.summary.totalExpenses, 0);
+    assert.equal(dash.expenseDirections.total, 0);
+    assert.equal(dash.expensesByDirection.length, 0);
   });
 });

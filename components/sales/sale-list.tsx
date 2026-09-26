@@ -12,6 +12,7 @@ import { formatDateTime } from "@/lib/format";
 import { saleListingStatusLabels } from "@/lib/sale-listing-labels";
 import type { SaleListingDTO } from "@/lib/sale-listings";
 import { formatMoney, propertyTypeLabels } from "@/lib/property-labels";
+import { PropertyPresentationActions } from "@/components/properties/property-presentation-actions";
 
 const statusStyles = {
   DRAFT: "bg-zinc-100 text-zinc-700",
@@ -381,11 +382,11 @@ export function SaleList({ listings, propertyPhotosById }: SaleListProps) {
                       switch (col.id) {
                         case "photo":
                           return (
-                            <td key={col.id} className="px-3 py-3">
+                            <td key={col.id} className="w-[10.5rem] min-w-[10.5rem] px-3 py-3">
                               <button
                                 type="button"
                                 onClick={() => openGallery(listing)}
-                                className="block overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-left"
+                                className="block h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-left sm:h-28 sm:w-40"
                                 title="Открыть фото объекта"
                               >
                                 {cover ? (
@@ -393,10 +394,10 @@ export function SaleList({ listings, propertyPhotosById }: SaleListProps) {
                                   <img
                                     src={cover}
                                     alt=""
-                                    className="h-24 w-32 object-cover sm:h-28 sm:w-40"
+                                    className="h-full w-full max-w-none object-cover"
                                   />
                                 ) : (
-                                  <span className="flex h-24 w-32 items-center justify-center text-zinc-400 sm:h-28 sm:w-40">
+                                  <span className="flex h-full w-full items-center justify-center text-zinc-400">
                                     <IconBuilding size={28} />
                                   </span>
                                 )}
@@ -529,20 +530,31 @@ export function SaleList({ listings, propertyPhotosById }: SaleListProps) {
                         case "actions":
                           return (
                             <td key={col.id} className="relative z-10 px-3 py-3">
-                              <div className="flex flex-wrap gap-2">
-                                <Link
-                                  href={`/crm/sales/properties/${listing.id}`}
-                                  className="rounded-md border border-zinc-200 px-2 py-1 text-xs hover:bg-white"
-                                >
-                                  Открыть
-                                </Link>
-                                <Link
-                                  href={`/crm/sales/properties/${listing.id}/edit`}
-                                  prefetch={false}
-                                  className="rounded-md border border-zinc-200 px-2 py-1 text-xs hover:bg-white"
-                                >
-                                  Редактировать
-                                </Link>
+                              <div className="flex flex-col gap-2">
+                                <div className="flex flex-wrap gap-2">
+                                  <Link
+                                    href={`/crm/sales/properties/${listing.id}`}
+                                    className="rounded-md border border-zinc-200 px-2 py-1 text-xs hover:bg-white"
+                                  >
+                                    Открыть
+                                  </Link>
+                                  <Link
+                                    href={`/crm/sales/properties/${listing.id}/edit`}
+                                    prefetch={false}
+                                    className="rounded-md border border-zinc-200 px-2 py-1 text-xs hover:bg-white"
+                                  >
+                                    Редактировать
+                                  </Link>
+                                </div>
+                                <PropertyPresentationActions
+                                  propertyId={listing.propertyId}
+                                  propertyName={
+                                    listing.marketingTitle || listing.property.name
+                                  }
+                                  kind="SALE"
+                                  showPublish
+                                  dense
+                                />
                               </div>
                             </td>
                           );

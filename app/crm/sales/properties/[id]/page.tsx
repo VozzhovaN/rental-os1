@@ -30,6 +30,7 @@ import { getAvitoSalePublicationDiagnostics } from "@/lib/publications/providers
 import { getDomclickSalePublicationDiagnostics } from "@/lib/publications/providers/domclick/sale";
 import { depositStatusLabels, viewingStatusLabels } from "@/lib/viewing-deposit-labels";
 import { getViewingsBySaleListing, serializeViewing } from "@/lib/viewings";
+import { PropertyPresentationActions } from "@/components/properties/property-presentation-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,12 @@ export default async function SalePropertyCardPage({
           >
             Редактировать
           </Link>
+          <PropertyPresentationActions
+            propertyId={card.property.id}
+            propertyName={card.marketingTitle || card.property.name}
+            kind="SALE"
+            showPublish
+          />
           {canArchive ? <ArchiveSaleButton listingId={card.id} /> : null}
         </div>
       </div>

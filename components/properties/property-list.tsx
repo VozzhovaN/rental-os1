@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import {
@@ -24,6 +25,7 @@ import {
   propertyStatusLabels,
   propertyTypeLabels,
 } from "@/lib/property-labels";
+import { PropertyPresentationActions, sendPropertyPresentationPdf } from "@/components/properties/property-presentation-actions";
 
 export type PropertyListDirections = {
   longTermListingId: string | null;
@@ -111,7 +113,7 @@ function CoverThumb({
       <img
         src={property.coverPhotoUrl}
         alt={property.name}
-        className={className ?? "h-full w-full object-cover"}
+        className={className ?? "h-full w-full max-w-none object-cover"}
       />
     );
   }
@@ -156,6 +158,8 @@ function YesNo({ value }: { value: boolean }) {
 
 function QuickActionsMenu({ item }: { item: PropertyListItem }) {
   const [open, setOpen] = useState(false);
+  const [pdfPending, setPdfPending] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -181,6 +185,10 @@ function QuickActionsMenu({ item }: { item: PropertyListItem }) {
     { href: `/crm/properties/${item.id}/edit`, label: "Редактировать" },
     { href: calendarHref, label: "Открыть календарь" },
     { href: `/crm/bookings/new?propertyId=${item.id}`, label: "Добавить бронь" },
+    {
+      href: `/crm/presentations/new?propertyId=${item.id}&kind=SHORT_TERM`,
+      label: "Создать презентацию",
+    },
   ];
 
   if (item.directions.longTermListingId) {
@@ -202,6 +210,27 @@ function QuickActionsMenu({ item }: { item: PropertyListItem }) {
     label: "Финансы объекта",
   });
 
+  async function sendPdf(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (pdfPending) return;
+    setPdfError(null);
+    setPdfPending(true);
+    try {
+      await sendPropertyPresentationPdf({
+        propertyId: item.id,
+        propertyName: item.name,
+      });
+      setOpen(false);
+    } catch (sendError) {
+      setPdfError(
+        sendError instanceof Error ? sendError.message : "Не удалось отправить PDF",
+      );
+    } finally {
+      setPdfPending(false);
+    }
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -221,7 +250,7 @@ function QuickActionsMenu({ item }: { item: PropertyListItem }) {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-[var(--finance-border)] bg-white py-1 shadow-[var(--finance-shadow)]"
+          className="absolute right-0 bottom-full z-30 mb-1 w-52 overflow-hidden rounded-xl border border-[var(--finance-border)] bg-white py-1 shadow-[var(--finance-shadow)]"
         >
           {actions.map((action) => (
             <Link
@@ -234,6 +263,20 @@ function QuickActionsMenu({ item }: { item: PropertyListItem }) {
               {action.label}
             </Link>
           ))}
+          <button
+            type="button"
+            role="menuitem"
+            disabled={pdfPending}
+            className="block w-full px-3 py-2 text-left text-sm text-[var(--finance-text)] hover:bg-[var(--finance-hover)] disabled:opacity-60"
+            onClick={sendPdf}
+          >
+            {pdfPending ? "Формирование PDF…" : "Отправить PDF"}
+          </button>
+          {pdfError ? (
+            <p className="border-t border-[var(--finance-border)] px-3 py-2 text-[11px] text-red-600">
+              {pdfError}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -512,7 +555,7 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
           {filtered.map((item) => (
             <article
               key={item.id}
-              className="finance-card flex flex-col overflow-hidden transition hover:border-[#CFD9E8]"
+              className="finance-card flex flex-col transition hover:border-[#CFD9E8]"
             >
               <Link
                 href={`/crm/properties/${item.id}`}
@@ -543,14 +586,21 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
                   <ManagementBadge type={item.managementType} />
                 </div>
                 <DirectionChips item={item} />
-                <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-                  <Link
-                    href={`/crm/properties/${item.id}`}
-                    className="inline-flex rounded-xl border border-[var(--finance-border)] px-3 py-1.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
-                  >
-                    Открыть
-                  </Link>
-                  <QuickActionsMenu item={item} />
+                <div className="mt-auto space-y-2 pt-1">
+                  <PropertyPresentationActions
+                    propertyId={item.id}
+                    propertyName={item.name}
+                    compact
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <Link
+                      href={`/crm/properties/${item.id}`}
+                      className="inline-flex rounded-xl border border-[var(--finance-border)] px-3 py-1.5 text-sm font-medium text-[var(--finance-text)] hover:bg-[var(--finance-hover)]"
+                    >
+                      Открыть
+                    </Link>
+                    <QuickActionsMenu item={item} />
+                  </div>
                 </div>
               </div>
             </article>
@@ -581,8 +631,8 @@ export function PropertyList({ properties }: { properties: PropertyListItem[] })
                     className="cursor-pointer border-b border-[var(--finance-border)] last:border-0 hover:bg-[var(--finance-hover)]"
                     onClick={() => router.push(`/crm/properties/${item.id}`)}
                   >
-                    <td className="px-3 py-2.5">
-                      <div className="h-10 w-14 overflow-hidden rounded-lg bg-[#EEF3F9]">
+                    <td className="w-16 min-w-16 px-3 py-2.5">
+                      <div className="h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-[#EEF3F9]">
                         <CoverThumb property={item} />
                       </div>
                     </td>

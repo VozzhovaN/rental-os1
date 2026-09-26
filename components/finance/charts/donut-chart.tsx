@@ -41,6 +41,7 @@ export const EXPENSE_SEGMENT_COLORS: Record<string, string> = {
   LONG_TERM: "#F7834A",
   SALES: "#F6C54A",
   GENERAL: "#F15179",
+  UNALLOCATED: "#94A3B8",
 };
 
 export const EXPENSE_CATEGORY_COLORS: Record<string, string> = {
